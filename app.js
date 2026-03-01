@@ -7,27 +7,39 @@ let currentMode = 'login';
 // 1. ПРОВЕРКА СТАТУСА И РОЛИ
 async function checkUser() {
     const { data: { user } } = await _supabase.auth.getUser();
-    if (!user) return;
+    const authContainer = document.getElementById('auth-buttons');
+    const adminPanel = document.getElementById('admin-editor');
+    const settingsLink = document.getElementById('link-settings');
 
-    const { data: profile } = await _supabase
-        .from('profiles')
-        .select('username, role')
-        .eq('id', user.id)
-        .single();
+    if (user) {
+        // Загружаем данные профиля
+        const { data: profile } = await _supabase
+            .from('profiles')
+            .select('username, role, avatar_url')
+            .eq('id', user.id)
+            .single();
 
-    if (profile) {
-        const authContainer = document.getElementById('auth-buttons');
-        authContainer.innerHTML = `
-            <div class="user-info" style="display: flex; align-items: center; gap: 10px;">
-                <span class="badge" style="background: var(--accent); color: #fff; padding: 2px 6px; font-size: 10px; font-weight: bold;">${profile.role.toUpperCase()}</span>
-                <span class="user-email">${profile.username || user.email}</span>
-                <button class="btn btn-outline" onclick="logout()">Выход</button>
-            </div>
-        `;
+        if (profile) {
+            // Отображаем ник и аватарку в шапке
+            const avatarHtml = profile.avatar_url 
+                ? `<img src="${profile.avatar_url}" style="width:25px; height:25px; border-radius:50%; object-fit:cover; border:1px solid var(--accent);">`
+                : `<div style="width:25px; height:25px; border-radius:50%; background:#222; display:inline-block; vertical-align:middle;"></div>`;
 
-        const adminPanel = document.getElementById('admin-editor');
-        if (adminPanel && (profile.role === 'artist' || profile.role === 'admin')) {
-            adminPanel.style.display = 'block';
+            authContainer.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    ${avatarHtml}
+                    <span style="font-size:0.8rem; font-weight:700;">${profile.username || 'USER'}</span>
+                    <button class="btn btn-outline" style="padding:5px 10px; font-size:0.6rem;" onclick="logout()">EXIT</button>
+                </div>
+            `;
+
+            // Показываем настройки
+            if (settingsLink) settingsLink.style.display = 'inline-block';
+
+            // ВКЛЮЧАЕМ АДМИНКУ (дроп постов)
+            if (adminPanel && (profile.role === 'artist' || profile.role === 'admin')) {
+                adminPanel.style.display = 'block';
+            }
         }
     }
 }
@@ -228,4 +240,5 @@ window.onload = () => {
     checkUser();
     fetchPosts();
 };
+
 
