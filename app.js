@@ -4,44 +4,57 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentMode = 'login';
 
-// 1. ПРОВЕРКА СТАТУСА И РОЛИ
+// 1. ПРОВЕРКА ПОЛЬЗОВАТЕЛЯ И ЕГО РОЛИ
 async function checkUser() {
     const { data: { user } } = await _supabase.auth.getUser();
     const authContainer = document.getElementById('auth-buttons');
     const adminPanel = document.getElementById('admin-editor');
-    const settingsLink = document.getElementById('link-settings');
 
-    if (user) {
-        // Загружаем данные профиля
-        const { data: profile } = await _supabase
-            .from('profiles')
-            .select('username, role, avatar_url')
-            .eq('id', user.id)
-            .single();
+    if (!user) {
+        console.log("Пользователь не авторизован");
+        return;
+    }
 
-        if (profile) {
-            // Отображаем ник и аватарку в шапке
-            const avatarHtml = profile.avatar_url 
-                ? `<img src="${profile.avatar_url}" style="width:25px; height:25px; border-radius:50%; object-fit:cover; border:1px solid var(--accent);">`
-                : `<div style="width:25px; height:25px; border-radius:50%; background:#222; display:inline-block; vertical-align:middle;"></div>`;
+    // Запрашиваем данные из таблицы profiles
+    const { data: profile, error } = await _supabase
+        .from('profiles')
+        .select('username, role, avatar_url')
+        .eq('id', user.id)
+        .single();
 
-            authContainer.innerHTML = `
-                <div style="display:flex; align-items:center; gap:10px;">
-                    ${avatarHtml}
-                    <span style="font-size:0.8rem; font-weight:700;">${profile.username || 'USER'}</span>
-                    <button class="btn btn-outline" style="padding:5px 10px; font-size:0.6rem;" onclick="logout()">EXIT</button>
+    if (error) {
+        console.error("Ошибка получения профиля:", error);
+        // Если профиля нет, выводим хотя бы почту
+        authContainer.innerHTML = `<span>${user.email} (Нет профиля)</span> <button onclick="logout()">Выход</button>`;
+        return;
+    }
+
+    if (profile) {
+        console.log("Профиль загружен:", profile);
+        
+        // Рендерим ник и аватар в шапке
+        const avatarImg = profile.avatar_url 
+            ? `<img src="${profile.avatar_url}" style="width:30px; height:30px; border-radius:50%; object-fit:cover; border:1px solid var(--accent); margin-right:10px;">`
+            : `<div style="width:30px; height:30px; border-radius:50%; background:#222; display:inline-block; margin-right:10px; vertical-align:middle;"></div>`;
+
+        authContainer.innerHTML = `
+            <div style="display:flex; align-items:center;">
+                ${avatarImg}
+                <div style="display:flex; flex-direction:column; margin-right:15px;">
+                    <span style="font-size:0.8rem; font-weight:900; line-height:1;">${profile.username.toUpperCase()}</span>
+                    <span style="font-size:0.6rem; color:var(--accent);">${profile.role.toUpperCase()}</span>
                 </div>
-            `;
+                <button class="btn btn-outline" style="padding:5px 10px; font-size:0.6rem;" onclick="logout()">EXIT</button>
+            </div>
+        `;
 
-            // Показываем настройки
-            if (settingsLink) settingsLink.style.display = 'inline-block';
-
-            // ВКЛЮЧАЕМ АДМИНКУ (дроп постов)
-            if (adminPanel && (profile.role === 'artist' || profile.role === 'admin')) {
-                adminPanel.style.display = 'block';
-            }
+        // ВКЛЮЧАЕМ АДМИНКУ
+        if (adminPanel && (profile.role === 'artist' || profile.role === 'admin')) {
+            console.log("Доступ к админке разрешен");
+            adminPanel.style.display = 'block';
         }
     }
+}
 }
 
 async function logout() {
@@ -98,48 +111,48 @@ async function deletePost(postId) {
     else document.getElementById(`post-${postId}`)?.remove();
 }
 
-// 4. СОЗДАНИЕ ПОСТА
+// 4. СОЗДАНИЕ ПОСТА С ПРОВЕРКОЙ ОШИБОК
 async function createPost() {
     const btn = document.getElementById('upload-btn');
-    const file = document.getElementById('post-audio').files[0];
+    const fileInput = document.getElementById('post-audio');
     const title = document.getElementById('post-title').value;
-    const genre = document.getElementById('post-genre').value;
-    const content = document.getElementById('post-desc').value;
-
-    if (!file || !title) return alert("Название и файл — база, заполни их!");
+    
+    if (!fileInput.files[0] || !title) return alert("Название и файл обязательны!");
 
     btn.disabled = true;
     btn.innerText = "UPLOADING...";
 
-    try {
-        const { data: { user } } = await _supabase.auth.getUser();
-        if (!user) throw new Error("Ты не авторизован");
+    const file = fileInput.files[0];
+    const fileName = `${Date.now()}_${file.name}`;
 
-        // 1. Загрузка файла
-        const fileName = `${Date.now()}_${file.name}`;
-        const { data: sData, error: sErr } = await _supabase.storage.from('tracks').upload(fileName, file);
-        if (sErr) throw sErr;
+    // 1. Загрузка в Storage
+    const { data: sData, error: sErr } = await _supabase.storage.from('tracks').upload(fileName, file);
+    if (sErr) {
+        alert("Ошибка загрузки файла: " + sErr.message);
+        btn.disabled = false;
+        return;
+    }
 
-        // 2. Ссылка на файл
-        const { data: { publicUrl } } = _supabase.storage.from('tracks').getPublicUrl(fileName);
+    // 2. Получение ссылки
+    const { data: { publicUrl } } = _supabase.storage.from('tracks').getPublicUrl(fileName);
+    const { data: { user } } = await _supabase.auth.getUser();
 
-        // 3. Запись в БД (именно в таблицу posts)
-        const { error: dbErr } = await _supabase.from('posts').insert([{ 
-            title: title, 
-            genre: genre, 
-            content: content, 
-            user_id: user.id, 
-            track_url: publicUrl 
-        }]);
+    // 3. Сохранение в базу
+    const { error: dbErr } = await _supabase.from('posts').insert([{
+        title: title,
+        genre: document.getElementById('post-genre').value,
+        content: document.getElementById('post-desc').value,
+        user_id: user.id,
+        track_url: publicUrl
+    }]);
 
-        if (dbErr) throw dbErr;
-
-        alert("РЕЛИЗ ОПУБЛИКОВАН");
-        location.reload();
-    } catch (err) {
-        alert("Ошибка: " + err.message);
+    if (dbErr) {
+        console.error("Ошибка вставки в БД:", dbErr);
+        alert("Ошибка сохранения: " + dbErr.message);
         btn.disabled = false;
         btn.innerText = "Опубликовать релиз";
+    } else {
+        location.reload();
     }
 }
 
@@ -246,6 +259,7 @@ window.onload = () => {
     checkUser();
     fetchPosts();
 };
+
 
 
 
