@@ -52,7 +52,7 @@ async function checkUser() {
         if (settingsLink) settingsLink.style.display = 'inline-block';
 
         // ВКЛЮЧАЕМ АДМИНКУ (если роль позволяет)
-        if (adminPanel && (profile.role === 'artist' || profile.role === 'admin')) {
+        if (adminPanel && (profile.role === 'artist' || profile.role === 'admin' || profile.role === 'beatmaker')) {
             adminPanel.style.display = 'block';
         }
 
