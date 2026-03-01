@@ -146,6 +146,66 @@ async function handleAuth() {
     }
 }
 
+// 1. Показываем ссылку на настройки только залогиненным
+async function checkUser() {
+    const { data: { user } } = await _supabase.auth.getUser();
+    if (user) {
+        document.getElementById('link-settings').style.display = 'inline-block';
+        // Подгружаем текущие данные в поля настроек
+        loadSettingsData(user.id);
+    }
+}
+
+async function loadSettingsData(userId) {
+    const { data: profile } = await _supabase.from('profiles').select('*').eq('id', userId).single();
+    if (profile) {
+        document.getElementById('settings-username').value = profile.username || '';
+        if (profile.avatar_url) {
+            document.getElementById('settings-avatar-preview').src = profile.avatar_url;
+        }
+    }
+}
+
+// 2. Обновление ника и аватара
+async function updateProfile() {
+    const { data: { user } } = await _supabase.auth.getUser();
+    const newUsername = document.getElementById('settings-username').value;
+    const avatarFile = document.getElementById('settings-avatar-input').files[0];
+    let avatarUrl = document.getElementById('settings-avatar-preview').src;
+
+    // Если выбрано новое фото
+    if (avatarFile) {
+        const fileName = `avatar_${user.id}_${Date.now()}`;
+        const { data, error } = await _supabase.storage.from('avatars').upload(fileName, avatarFile);
+        if (error) return alert("Ошибка загрузки фото: " + error.message);
+        
+        const { data: { publicUrl } } = _supabase.storage.from('avatars').getPublicUrl(fileName);
+        avatarUrl = publicUrl;
+    }
+
+    const { error } = await _supabase.from('profiles').update({ 
+        username: newUsername,
+        avatar_url: avatarUrl 
+    }).eq('id', user.id);
+
+    if (error) alert(error.message);
+    else {
+        alert("Профиль обновлен!");
+        location.reload();
+    }
+}
+
+// 3. Смена пароля
+async function updatePassword() {
+    const newPassword = document.getElementById('settings-password').value;
+    if (newPassword.length < 6) return alert("Пароль должен быть минимум 6 символов");
+
+    const { error } = await _supabase.auth.updateUser({ password: newPassword });
+
+    if (error) alert(error.message);
+    else alert("Пароль успешно изменен!");
+}
+
 function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-center a').forEach(a => a.classList.remove('active'));
@@ -168,3 +228,4 @@ window.onload = () => {
     checkUser();
     fetchPosts();
 };
+
