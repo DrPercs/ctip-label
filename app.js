@@ -4,18 +4,33 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentMode = 'login';
 
-// 1. ПРОВЕРКА СТАТУСА ЮЗЕРА
+// 1. ПРОВЕРКА СТАТУСА И РОЛИ
 async function checkUser() {
     const { data: { user } } = await _supabase.auth.getUser();
-    const authContainer = document.getElementById('auth-buttons');
-    const adminPanel = document.getElementById('admin-editor');
+    if (!user) return;
 
-    if (user) {
+    // Тянем профиль из таблицы profiles
+    const { data: profile } = await _supabase
+        .from('profiles')
+        .select('username, role')
+        .eq('id', user.id)
+        .single();
+
+    if (profile) {
+        const authContainer = document.getElementById('auth-buttons');
         authContainer.innerHTML = `
-            <span class="user-email">${user.email}</span>
-            <button class="btn btn-outline" onclick="logout()">Выход</button>
+            <div class="user-info" style="display: flex; align-items: center; gap: 10px;">
+                <span class="badge" style="background: var(--accent); color: #fff; padding: 2px 6px; font-size: 10px; font-weight: bold;">${profile.role.toUpperCase()}</span>
+                <span class="user-email">${profile.username || user.email}</span>
+                <button class="btn btn-outline" onclick="logout()">Выход</button>
+            </div>
         `;
-        if (adminPanel) adminPanel.style.display = 'block';
+
+        // Кнопка релиза видна ТОЛЬКО если роль 'artist' или 'admin'
+        const adminPanel = document.getElementById('admin-editor');
+        if (adminPanel && (profile.role === 'artist' || profile.role === 'admin')) {
+            adminPanel.style.display = 'block';
+        }
     }
 }
 
@@ -24,11 +39,19 @@ async function logout() {
     location.reload();
 }
 
-// 2. ПОЛУЧЕНИЕ ПОСТОВ С ПРОВЕРКОЙ ВЛАДЕЛЬЦА
+// 2. ПОЛУЧЕНИЕ ПОСТОВ (С НИКАМИ АВТОРОВ)
 async function fetchPosts() {
-    const { data: { user } } = await _supabase.auth.getUser();
-    const { data, error } = await _supabase.from('posts').select('*').order('created_at', { ascending: false });
+    // Тянем посты вместе с данными из таблицы profiles
+    const { data, error } = await _supabase
+        .from('posts')
+        .select(`
+            *,
+            profiles:user_id (username)
+        `)
+        .order('created_at', { ascending: false });
+
     const container = document.getElementById('posts-container');
+    const { data: { user } } = await _supabase.auth.getUser();
     
     if (error) {
         container.innerHTML = "<p>Ошибка загрузки.</p>";
@@ -36,13 +59,13 @@ async function fetchPosts() {
     }
 
     container.innerHTML = data.map(post => {
-        // Проверяем: совпадает ли ID залогиненного юзера с user_id поста
         const isOwner = user && user.id === post.user_id;
+        const authorName = post.profiles?.username || 'Unknown Artist';
         
         return `
             <div class="track-card" id="post-${post.id}">
                 <div class="track-img">
-                    <span class="system-label">CTIP_SYSTEM</span>
+                    <span class="system-label">${authorName}</span>
                     <small class="ref-id">REF_${post.id.substring(0,8)}</small>
                 </div>
                 <strong>${post.title}</strong>
@@ -66,16 +89,13 @@ async function fetchPosts() {
 async function deletePost(postId) {
     if (!confirm('Удалить этот релиз навсегда?')) return;
 
-    // Удаляем из таблицы 'posts'
     const { error } = await _supabase
         .from('posts')
         .delete()
         .eq('id', postId);
 
-    if (error) {
-        alert('Ошибка при удалении: ' + error.message);
-    } else {
-        // Убираем карточку с экрана без перезагрузки
+    if (error) alert('Ошибка при удалении: ' + error.message);
+    else {
         const element = document.getElementById(`post-${postId}`);
         if (element) element.remove();
     }
@@ -92,21 +112,18 @@ async function createPost() {
     btn.disabled = true;
     btn.innerText = "UPLOADING...";
 
-    // Загрузка в Storage
     const fileName = `${Date.now()}_${file.name}`;
     const { data: sData, error: sErr } = await _supabase.storage.from('tracks').upload(fileName, file);
     
     if (sErr) {
-        alert("Ошибка загрузки файла: " + sErr.message);
+        alert("Ошибка загрузки: " + sErr.message);
         btn.disabled = false;
         return;
     }
 
-    // Получаем URL и ID юзера
     const { data: { publicUrl } } = _supabase.storage.from('tracks').getPublicUrl(fileName);
     const { data: { user } } = await _supabase.auth.getUser();
     
-    // Сохраняем в базу
     const { error: dbErr } = await _supabase.from('posts').insert([{ 
         title, 
         genre: document.getElementById('post-genre').value, 
@@ -123,16 +140,25 @@ async function createPost() {
     }
 }
 
-// --- ВСПОМОГАТЕЛЬНОЕ ---
+// 5. АВТОРИЗАЦИЯ
 async function handleAuth() {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
-    const { error } = (currentMode === 'reg') 
-        ? await _supabase.auth.signUp({ email, password })
-        : await _supabase.auth.signInWithPassword({ email, password });
+    const username = document.getElementById('auth-username').value;
 
-    if (error) alert(error.message);
-    else { closeModal(); checkUser(); fetchPosts(); }
+    if (currentMode === 'reg') {
+        const { error } = await _supabase.auth.signUp({
+            email,
+            password,
+            options: { data: { username: username } } 
+        });
+        if (error) alert(error.message);
+        else alert('Проверь почту для подтверждения!');
+    } else {
+        const { error } = await _supabase.auth.signInWithPassword({ email, password });
+        if (error) alert(error.message);
+        else { closeModal(); location.reload(); }
+    }
 }
 
 function showPage(pageId) {
@@ -147,6 +173,7 @@ function openModal(type) {
     currentMode = type;
     document.getElementById('authModal').style.display = 'flex';
     document.getElementById('modalTitle').innerText = (type === 'login') ? 'ВХОД' : 'РЕГИСТРАЦИЯ';
+    document.getElementById('auth-username').style.display = (type === 'reg') ? 'block' : 'none';
     document.getElementById('auth-submit-btn').onclick = handleAuth;
 }
 
