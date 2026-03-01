@@ -9,7 +9,6 @@ async function checkUser() {
     const { data: { user } } = await _supabase.auth.getUser();
     if (!user) return;
 
-    // Тянем профиль из таблицы profiles
     const { data: profile } = await _supabase
         .from('profiles')
         .select('username, role')
@@ -26,7 +25,6 @@ async function checkUser() {
             </div>
         `;
 
-        // Кнопка релиза видна ТОЛЬКО если роль 'artist' или 'admin'
         const adminPanel = document.getElementById('admin-editor');
         if (adminPanel && (profile.role === 'artist' || profile.role === 'admin')) {
             adminPanel.style.display = 'block';
@@ -39,28 +37,26 @@ async function logout() {
     location.reload();
 }
 
-// 2. ПОЛУЧЕНИЕ ПОСТОВ (С НИКАМИ АВТОРОВ)
+// 2. ПОЛУЧЕНИЕ ПОСТОВ
 async function fetchPosts() {
-    // Тянем посты вместе с данными из таблицы profiles
-    const { data, error } = await _supabase
-        .from('posts')
-        .select(`
-            *,
-            profiles:user_id (username)
-        `)
-        .order('created_at', { ascending: false });
-
     const container = document.getElementById('posts-container');
     const { data: { user } } = await _supabase.auth.getUser();
+
+    // Запрашиваем посты и ники через связь
+    const { data, error } = await _supabase
+        .from('posts')
+        .select(`*, profiles:user_id (username)`)
+        .order('created_at', { ascending: false });
     
     if (error) {
-        container.innerHTML = "<p>Ошибка загрузки.</p>";
+        console.error("Fetch error:", error);
+        container.innerHTML = `<p style="color:var(--accent)">Ошибка загрузки: ${error.message}</p>`;
         return;
     }
 
     container.innerHTML = data.map(post => {
         const isOwner = user && user.id === post.user_id;
-        const authorName = post.profiles?.username || 'Unknown Artist';
+        const authorName = post.profiles?.username || 'ARTIST';
         
         return `
             <div class="track-card" id="post-${post.id}">
@@ -70,11 +66,8 @@ async function fetchPosts() {
                 </div>
                 <strong>${post.title}</strong>
                 <p class="genre-tag">${post.genre || 'Experimental'}</p>
-                
                 ${post.track_url ? `<audio controls src="${post.track_url}"></audio>` : ''}
-                
                 <p class="post-content">${post.content || ''}</p>
-
                 ${isOwner ? `
                     <button class="delete-btn" onclick="deletePost('${post.id}')">
                         [ DELETE RELEASE ]
@@ -88,17 +81,9 @@ async function fetchPosts() {
 // 3. УДАЛЕНИЕ ПОСТА
 async function deletePost(postId) {
     if (!confirm('Удалить этот релиз навсегда?')) return;
-
-    const { error } = await _supabase
-        .from('posts')
-        .delete()
-        .eq('id', postId);
-
+    const { error } = await _supabase.from('posts').delete().eq('id', postId);
     if (error) alert('Ошибка при удалении: ' + error.message);
-    else {
-        const element = document.getElementById(`post-${postId}`);
-        if (element) element.remove();
-    }
+    else document.getElementById(`post-${postId}`)?.remove();
 }
 
 // 4. СОЗДАНИЕ ПОСТА
@@ -165,7 +150,7 @@ function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-center a').forEach(a => a.classList.remove('active'));
     document.getElementById(pageId).classList.add('active');
-    document.getElementById('link-' + pageId).classList.add('active');
+    document.getElementById('link-' + pageId)?.classList.add('active');
     if (pageId === 'feed') fetchPosts();
 }
 
