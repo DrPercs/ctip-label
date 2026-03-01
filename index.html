@@ -15,7 +15,7 @@
         <a href="#" class="logo" onclick="showPage('home')">CTIP</a>
         <nav class="nav-center">
             <a href="#" id="link-home" onclick="showPage('home')" class="active">Главная</a>
-            <a href="#" id="link-feed" onclick="showPage('feed')">POSTS</a>
+            <a href="#" id="link-feed" onclick="showPage('feed')">SERA</a>
             <a href="#" id="link-apply" onclick="showPage('apply')">Вакансии</a>
         </nav>
         <div class="nav-right" id="auth-buttons">
@@ -75,6 +75,7 @@
     <div id="authModal" class="modal">
         <div class="modal-content">
             <h2 id="modalTitle">ВХОД</h2>
+            <input type="text" id="auth-username" placeholder="Твой Ник (Alias)" style="display:none; margin-bottom: 10px;">
             <input type="email" id="auth-email" placeholder="Email">
             <input type="password" id="auth-password" placeholder="Password">
             <button class="btn btn-fill" id="auth-submit-btn" style="width:100%">Продолжить</button>
@@ -85,4 +86,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-
