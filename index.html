@@ -31,7 +31,6 @@
             overflow-x: hidden;
         }
 
-        /* UI Elements */
         header {
             position: fixed;
             top: 0;
@@ -74,11 +73,6 @@
                     color: var(--accent);
                 }
 
-        .nav-right {
-            display: flex;
-            gap: 15px;
-        }
-
         .btn {
             padding: 10px 22px;
             border-radius: 2px;
@@ -104,6 +98,11 @@
                 background: var(--accent);
                 color: #fff;
             }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
         .page {
             display: none;
@@ -145,18 +144,24 @@
         .track-img {
             width: 100%;
             aspect-ratio: 16/9;
-            background: #1a1a1a;
+            background: linear-gradient(45deg, #0a0a0a, #1a1a1a);
             margin-bottom: 15px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             font-family: 'Space Mono';
-            font-size: 0.7rem;
-            color: #333;
             border: 1px solid #222;
         }
 
-        /* Modals */
+        /* Player Style */
+        audio {
+            width: 100%;
+            margin: 15px 0;
+            filter: invert(1) hue-rotate(180deg);
+            height: 30px;
+        }
+
         .modal {
             position: fixed;
             top: 0;
@@ -180,7 +185,7 @@
             position: relative;
         }
 
-        input, select, textarea {
+        input, textarea {
             width: 100%;
             background: #000;
             border: 1px solid #222;
@@ -189,6 +194,12 @@
             margin: 10px 0 20px;
             outline: none;
         }
+
+            input[type="file"] {
+                padding: 10px;
+                font-size: 0.8rem;
+                border: 1px dashed #333;
+            }
 
             input:focus {
                 border-color: var(--accent);
@@ -234,11 +245,13 @@
 
     <div id="feed" class="page">
         <div id="admin-editor">
-            <h2 style="margin-top:0">NEW RELEASE</h2>
+            <h2 style="margin-top:0">NEW DROP</h2>
             <input type="text" id="post-title" placeholder="Название трека">
-            <input type="text" id="post-genre" placeholder="Жанр (напр. Phonk, Techno)">
-            <textarea id="post-desc" placeholder="Описание или ссылка на скачивание"></textarea>
-            <button class="btn btn-fill" onclick="createPost()">Опубликовать</button>
+            <input type="text" id="post-genre" placeholder="Жанр">
+            <label style="display:block; font-size:0.7rem; color:var(--gray); margin-bottom:5px;">AUDIO FILE (MP3):</label>
+            <input type="file" id="post-audio" accept="audio/mpeg">
+            <textarea id="post-desc" placeholder="Описание"></textarea>
+            <button class="btn btn-fill" id="upload-btn" onclick="createPost()">Опубликовать релиз</button>
         </div>
 
         <h2 style="letter-spacing: 2px; text-transform: uppercase;">Latest Releases</h2>
@@ -270,22 +283,19 @@
     </div>
 
     <script>
-        // INIT SUPABASE
         const SUPABASE_URL = 'https://mgalvfcnytusbklahkjy.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_GRAiUwNcIIDaBwl8Ux1TuA_1JhaIv6h'; // Используем anon key
+        const SUPABASE_KEY = 'sb_publishable_GRAiUwNcIIDaBwl8Ux1TuA_1JhaIv6h';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentMode = 'login';
 
-        // AUTH FUNCTIONS
         async function handleAuth() {
         const email = document.querySelector('#auth-email').value;
         const password = document.querySelector('#auth-password').value;
-
         if (currentMode === 'reg') {
         const { error } = await _supabase.auth.signUp({ email, password });
         if (error) alert(error.message);
-        else alert('Успех! Проверь почту для подтверждения.');
+        else alert('Успех! Проверь почту.');
         } else {
         const { error } = await _supabase.auth.signInWithPassword({ email, password });
         if (error) alert(error.message);
@@ -295,50 +305,63 @@
 
         async function checkUser() {
         const { data: { user } } = await _supabase.auth.getUser();
-        const authSection = document.getElementById('auth-buttons');
-        const adminPanel = document.getElementById('admin-editor');
-
         if (user) {
-        authSection.innerHTML = `<span style="font-size: 0.7rem; color: #555; margin-right: 15px;">${user.email}</span><button class="btn btn-outline" onclick="_supabase.auth.signOut().then(()=>location.reload())">Выход</button>`;
-        adminPanel.style.display = 'block';
+        document.getElementById('auth-buttons').innerHTML = `<span style="font-size: 0.7rem; color: #555; margin-right: 15px;">${user.email}</span><button class="btn btn-outline" onclick="_supabase.auth.signOut().then(()=>location.reload())">Выход</button>`;
+        document.getElementById('admin-editor').style.display = 'block';
         }
         }
 
-        // DATABASE FUNCTIONS
         async function fetchPosts() {
-        const { data, error } = await _supabase
-        .from('posts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
+        const { data, error } = await _supabase.from('posts').select('*').order('created_at', { ascending: false });
         const container = document.getElementById('posts-container');
-        if (error) { container.innerHTML = 'Ошибка загрузки'; return; }
+        if (error) return;
 
         container.innerHTML = data.map(post => `
         <div class="track-card">
-        <div class="track-img">CONTENT_ID_${post.id.substring(0,8)}</div>
+        <div class="track-img">
+        <span style="color:var(--accent)">CTIP_SYSTEM</span>
+        <small style="opacity:0.2; font-size:10px; margin-top:5px;">REF_${post.id.substring(0,8)}</small>
+        </div>
         <strong>${post.title}</strong>
         <p style="color: var(--gray); font-size: 0.8rem; margin: 5px 0;">${post.genre || 'Experimental'}</p>
+        ${post.track_url ? `<audio controls src="${post.track_url}"></audio>` : ''}
         <p style="font-size: 0.8rem; color: #555;">${post.content || ''}</p>
         </div>
         `).join('');
         }
 
         async function createPost() {
+        const btn = document.getElementById('upload-btn');
+        const file = document.getElementById('post-audio').files[0];
         const title = document.getElementById('post-title').value;
         const genre = document.getElementById('post-genre').value;
         const content = document.getElementById('post-desc').value;
+
+        if (!file || !title) return alert("Заполни название и выбери файл!");
+
+        btn.disabled = true;
+        btn.innerText = "UPLOADING...";
+
+        // 1. Upload to Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const { data: sData, error: sErr } = await _supabase.storage.from('tracks').upload(fileName, file);
+
+        if (sErr) { alert(sErr.message); btn.disabled = false; return; }
+
+        // 2. Get URL
+        const { data: { publicUrl } } = _supabase.storage.from('tracks').getPublicUrl(fileName);
+
+        // 3. Save to DB
         const { data: { user } } = await _supabase.auth.getUser();
+        const { error: dbErr } = await _supabase.from('posts').insert([{
+        title, genre, content, user_id: user.id, track_url: publicUrl
+        }]);
 
-        const { error } = await _supabase.from('posts').insert([
-        { title, genre, content, user_id: user.id }
-        ]);
-
-        if (error) alert('Ошибка: ' + error.message);
-        else { alert('Дроп выполнен!'); location.reload(); }
+        if (dbErr) alert(dbErr.message);
+        else location.reload();
         }
 
-        // NAVIGATION & UI
         function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-center a').forEach(l => l.classList.remove('active'));
@@ -355,12 +378,7 @@
         }
 
         function closeModal() { document.getElementById('authModal').style.display = 'none'; }
-
-        // STARTUP
-        window.onload = () => {
-        checkUser();
-        fetchPosts();
-        };
+        window.onload = () => { checkUser(); fetchPosts(); };
     </script>
 </body>
 </html>
