@@ -32,27 +32,18 @@ async function checkUser() {
 
 // --- РАБОТА С ПОСТАМИ ---
 async function fetchPosts() {
-    // 1. Сначала железно получаем текущего юзера
     const { data: { user } } = await _supabase.auth.getUser();
-    
-    // 2. Берем посты
     const { data, error } = await _supabase.from('posts').select('*').order('created_at', { ascending: false });
     const container = document.getElementById('posts-container');
     
-    if (error) {
-        console.error("Ошибка загрузки:", error);
-        return;
-    }
+    if (error) return;
 
     container.innerHTML = data.map(post => {
-        // Проверка в консоли (открой F12 в браузере), чтобы понять почему нет кнопки
-        if (user) {
-            console.log(`Твой ID: ${user.id} | ID автора поста: ${post.user_id}`);
-        }
+        // Жесткая проверка
+        const userId = user ? String(user.id).toLowerCase() : null;
+        const postOwnerId = post.user_id ? String(post.user_id).toLowerCase() : null;
+        const isOwner = userId && postOwnerId && (userId === postOwnerId);
 
-        // Сравниваем ID (приводим к строке на всякий случай)
-        const isOwner = user && String(user.id) === String(post.user_id);
-        
         return `
             <div class="track-card" id="post-${post.id}">
                 <div class="track-img">
@@ -66,13 +57,17 @@ async function fetchPosts() {
                 
                 <p style="font-size: 0.8rem; color: #555;">${post.content || ''}</p>
 
-                ${isOwner ? `
-                    <button onclick="deletePost('${post.id}')" 
-                            style="background:none; border:1px solid var(--accent); color:var(--accent); 
-                            font-size:0.6rem; cursor:pointer; margin-top:10px; padding:5px 10px; text-transform:uppercase;">
-                        [ DELETE RELEASE ]
-                    </button>
-                ` : ''}
+                <div style="margin-top: 10px; border-top: 1px solid #222; pt: 10px;">
+                    ${isOwner ? `
+                        <button onclick="deletePost('${post.id}')" 
+                                style="background:var(--accent); border:none; color:#fff; 
+                                font-size:0.7rem; cursor:pointer; padding:8px 12px; font-weight:bold;">
+                            DELETE RELEASE
+                        </button>
+                    ` : `
+                        <small style="color:#333; font-size:0.6rem;">READ_ONLY_ACCESS</small>
+                    `}
+                </div>
             </div>
         `;
     }).join('');
