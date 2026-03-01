@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CTIP | HUB</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Space+Mono&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         :root {
             --accent: #ff0000;
@@ -28,7 +31,7 @@
             overflow-x: hidden;
         }
 
-        /* HEADER */
+        /* UI Elements */
         header {
             position: fixed;
             top: 0;
@@ -67,7 +70,7 @@
                 letter-spacing: 1px;
             }
 
-                .nav-center a:hover, .nav-center a.active {
+                .nav-center a.active {
                     color: var(--accent);
                 }
 
@@ -102,7 +105,6 @@
                 color: #fff;
             }
 
-        /* PAGES */
         .page {
             display: none;
             padding: 120px 5% 60px;
@@ -117,106 +119,51 @@
                 transform: translateY(0);
             }
 
-        /* HOME PAGE */
-        .hero {
-            text-align: center;
-            max-width: 900px;
-            margin: 0 auto;
+        /* Admin Panel */
+        #admin-editor {
+            background: #111;
+            border: 1px dashed var(--accent);
+            padding: 30px;
+            margin-bottom: 40px;
+            display: none;
         }
 
-            .hero h1 {
-                font-size: clamp(3rem, 10vw, 7rem);
-                line-height: 0.9;
-                margin-bottom: 20px;
-            }
-
-        /* BEATMAKER PAGE */
-        .profile-header {
-            display: flex;
-            gap: 40px;
-            align-items: center;
-            margin-bottom: 50px;
-            background: var(--card);
-            padding: 40px;
-            border: 1px solid #1a1a1a;
-        }
-
-        .profile-img {
-            width: 120px;
-            height: 120px;
-            background: var(--accent);
-            border-radius: 50%;
-        }
-
-        .stats {
-            display: flex;
-            gap: 30px;
-            margin-top: 15px;
-            color: var(--gray);
-            font-size: 0.9rem;
-        }
-
+        /* Grid & Cards */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
         }
 
         .track-card {
             background: var(--card);
             border: 1px solid #1a1a1a;
-            padding: 15px;
-            position: relative;
+            padding: 20px;
+            border-radius: 4px;
         }
-
-            .track-card:hover {
-                border-color: var(--accent);
-            }
 
         .track-img {
             width: 100%;
-            aspect-ratio: 1;
-            background: #222;
-            margin-bottom: 10px;
+            aspect-ratio: 16/9;
+            background: #1a1a1a;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: 'Space Mono';
             font-size: 0.7rem;
-            color: #444;
-        }
-
-        /* APPLY PAGE */
-        .apply-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: var(--card);
-            padding: 40px;
-            border: 1px solid #1a1a1a;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            background: #000;
+            color: #333;
             border: 1px solid #222;
-            padding: 15px;
-            color: #fff;
-            margin: 10px 0 25px;
-            border-radius: 0;
-            outline: none;
         }
 
-            input:focus {
-                border-color: var(--accent);
-            }
-
-        /* MODALS */
+        /* Modals */
         .modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             display: none;
             justify-content: center;
             align-items: center;
@@ -233,13 +180,19 @@
             position: relative;
         }
 
-        .close-modal {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            cursor: pointer;
-            color: var(--gray);
+        input, select, textarea {
+            width: 100%;
+            background: #000;
+            border: 1px solid #222;
+            padding: 15px;
+            color: #fff;
+            margin: 10px 0 20px;
+            outline: none;
         }
+
+            input:focus {
+                border-color: var(--accent);
+            }
 
         .noise {
             position: fixed;
@@ -261,65 +214,47 @@
     <header>
         <a href="#" class="logo" onclick="showPage('home')">CTIP</a>
         <nav class="nav-center">
-            <a href="#" id="link-home" onclick="showPage('home')">Главная</a>
-            <a href="#" id="link-feed" onclick="showPage('feed')">Битмейкеры</a>
+            <a href="#" id="link-home" onclick="showPage('home')" class="active">Главная</a>
+            <a href="#" id="link-feed" onclick="showPage('feed')">SERA</a>
             <a href="#" id="link-apply" onclick="showPage('apply')">Вакансии</a>
         </nav>
-        <div class="nav-right">
+        <div class="nav-right" id="auth-buttons">
             <button class="btn btn-outline" onclick="openModal('login')">Вход</button>
             <button class="btn btn-fill" onclick="openModal('reg')">Join</button>
         </div>
     </header>
 
     <div id="home" class="page active">
-        <div class="hero">
+        <div style="text-align: center; max-width: 800px; margin: 0 auto;">
             <p style="color: var(--accent); letter-spacing: 5px;">EST. 2026</p>
-            <h1>FUTURE OF <br>SOUND INDUSTRY</h1>
-            <p style="color: var(--gray); font-size: 1.2rem; margin: 30px 0;">Мы не просто выпускаем музыку. Мы создаем экосистему для визионеров, где звук становится смыслом, а хаос — стадионом.</p>
-            <button class="btn btn-fill" onclick="showPage('apply')" style="padding: 18px 40px;">Стать частью команды</button>
+            <h1 style="font-size: clamp(3rem, 10vw, 6rem); line-height: 0.9;">FUTURE OF <br>SOUND</h1>
+            <button class="btn btn-fill" onclick="showPage('apply')" style="margin-top: 30px; padding: 15px 40px;">СТАТЬ ЧАСТЬЮ</button>
         </div>
     </div>
 
     <div id="feed" class="page">
-        <div class="profile-header">
-            <div class="profile-img"></div>
-            <div>
-                <h2 style="margin:0">RARE BEATS</h2>
-                <p style="color: var(--gray);">Resident Producer at CTIP Label</p>
-                <div class="stats">
-                    <span><strong>12</strong> ТРЕКОВ</span>
-                    <span><strong>4.2k</strong> СЛУШАТЕЛЕЙ</span>
-                </div>
-            </div>
+        <div id="admin-editor">
+            <h2 style="margin-top:0">NEW RELEASE</h2>
+            <input type="text" id="post-title" placeholder="Название трека">
+            <input type="text" id="post-genre" placeholder="Жанр (напр. Phonk, Techno)">
+            <textarea id="post-desc" placeholder="Описание или ссылка на скачивание"></textarea>
+            <button class="btn btn-fill" onclick="createPost()">Опубликовать</button>
         </div>
-        <h3 style="margin-bottom: 30px; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px;">Последние релизы</h3>
-        <div class="grid">
-            <div class="track-card">
-                <div class="track-img">NOISE_SAMPLE_01.MP3</div>
-                <strong>DARK MATTER</strong>
-                <p style="color: var(--gray); font-size: 0.8rem;">Industrial Trap</p>
-            </div>
-            <div class="track-card">
-                <div class="track-img">VOX_HACK_02.WAV</div>
-                <strong>CYBER GLITCH</strong>
-                <p style="color: var(--gray); font-size: 0.8rem;">Experimental</p>
-            </div>
-            <div class="track-card">
-                <div class="track-img">DRUM_KIT_PRO.ZIP</div>
-                <strong>VOID KIT v1</strong>
-                <p style="color: var(--gray); font-size: 0.8rem;">Sample Pack</p>
-            </div>
+
+        <h2 style="letter-spacing: 2px; text-transform: uppercase;">Latest Releases</h2>
+        <div class="grid" id="posts-container">
+            <p style="color: #444;">Загрузка данных...</p>
         </div>
     </div>
 
     <div id="apply" class="page">
-        <div class="apply-container">
-            <h2 style="margin-top:0">APPLICATION</h2>
-            <p style="color: var(--gray); margin-bottom: 30px;">Заполни форму, чтобы попасть в базу визионеров лейбла.</p>
+        <div class="apply-container" style="max-width: 500px; margin: 0 auto;">
+            <h2>APPLICATION</h2>
             <form action="https://formspree.io/f/mzdaqvkq" method="POST">
-                <label>ИМЯ / ALIAS</label>
-                <input type="text" name="name" placeholder="Your name">
-                <button type="submit" class="btn btn-fill" style="width: 100%; padding: 20px;">ОТПРАВИТЬ ДАННЫЕ</button>
+                <input type="text" name="alias" placeholder="ALIAS" required>
+                <input type="email" name="email" placeholder="EMAIL" required>
+                <textarea name="message" placeholder="PORTFOLIO LINKS"></textarea>
+                <button type="submit" class="btn btn-fill" style="width: 100%;">Отправить анкету</button>
             </form>
         </div>
     </div>
@@ -328,40 +263,104 @@
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal()">✕</span>
             <h2 id="modalTitle">ВХОД</h2>
-            <input type="email" placeholder="Email">
-            <input type="password" placeholder="Password">
-            <button class="btn btn-fill" style="width: 100%; margin-top: 10px;">Продолжить</button>
+            <input type="email" id="auth-email" placeholder="Email">
+            <input type="password" id="auth-password" placeholder="Password">
+            <button class="btn btn-fill" id="auth-submit-btn" style="width: 100%;">Продолжить</button>
         </div>
     </div>
 
     <script>
+        // INIT SUPABASE
+        const SUPABASE_URL = 'https://mgalvfcnytusbklahkjy.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_GRAiUwNcIIDaBwl8Ux1TuA_1JhaIv6h'; // Используем anon key
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentMode = 'login';
+
+        // AUTH FUNCTIONS
+        async function handleAuth() {
+        const email = document.querySelector('#auth-email').value;
+        const password = document.querySelector('#auth-password').value;
+
+        if (currentMode === 'reg') {
+        const { error } = await _supabase.auth.signUp({ email, password });
+        if (error) alert(error.message);
+        else alert('Успех! Проверь почту для подтверждения.');
+        } else {
+        const { error } = await _supabase.auth.signInWithPassword({ email, password });
+        if (error) alert(error.message);
+        else { closeModal(); checkUser(); }
+        }
+        }
+
+        async function checkUser() {
+        const { data: { user } } = await _supabase.auth.getUser();
+        const authSection = document.getElementById('auth-buttons');
+        const adminPanel = document.getElementById('admin-editor');
+
+        if (user) {
+        authSection.innerHTML = `<span style="font-size: 0.7rem; color: #555; margin-right: 15px;">${user.email}</span><button class="btn btn-outline" onclick="_supabase.auth.signOut().then(()=>location.reload())">Выход</button>`;
+        adminPanel.style.display = 'block';
+        }
+        }
+
+        // DATABASE FUNCTIONS
+        async function fetchPosts() {
+        const { data, error } = await _supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+        const container = document.getElementById('posts-container');
+        if (error) { container.innerHTML = 'Ошибка загрузки'; return; }
+
+        container.innerHTML = data.map(post => `
+        <div class="track-card">
+        <div class="track-img">CONTENT_ID_${post.id.substring(0,8)}</div>
+        <strong>${post.title}</strong>
+        <p style="color: var(--gray); font-size: 0.8rem; margin: 5px 0;">${post.genre || 'Experimental'}</p>
+        <p style="font-size: 0.8rem; color: #555;">${post.content || ''}</p>
+        </div>
+        `).join('');
+        }
+
+        async function createPost() {
+        const title = document.getElementById('post-title').value;
+        const genre = document.getElementById('post-genre').value;
+        const content = document.getElementById('post-desc').value;
+        const { data: { user } } = await _supabase.auth.getUser();
+
+        const { error } = await _supabase.from('posts').insert([
+        { title, genre, content, user_id: user.id }
+        ]);
+
+        if (error) alert('Ошибка: ' + error.message);
+        else { alert('Дроп выполнен!'); location.reload(); }
+        }
+
+        // NAVIGATION & UI
         function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-center a').forEach(l => l.classList.remove('active'));
-
-        const targetPage = document.getElementById(pageId);
-        targetPage.classList.add('active');
+        document.getElementById(pageId).classList.add('active');
         document.getElementById('link-' + pageId).classList.add('active');
-        window.scrollTo(0,0);
+        if(pageId === 'feed') fetchPosts();
         }
 
         function openModal(type) {
-        const modal = document.getElementById('authModal');
-        const title = document.getElementById('modalTitle');
-        modal.style.display = 'flex';
-        title.innerText = type === 'login' ? 'ВХОД' : 'РЕГИСТРАЦИЯ';
+        currentMode = type;
+        document.getElementById('authModal').style.display = 'flex';
+        document.getElementById('modalTitle').innerText = type === 'login' ? 'ВХОД' : 'РЕГИСТРАЦИЯ';
+        document.getElementById('auth-submit-btn').onclick = handleAuth;
         }
 
-        function closeModal() {
-        document.getElementById('authModal').style.display = 'none';
-        }
+        function closeModal() { document.getElementById('authModal').style.display = 'none'; }
 
-        // Закрытие модалки при клике вне неё
-        window.onclick = function(event) {
-        const modal = document.getElementById('authModal');
-        if (event.target == modal) closeModal();
-        }
+        // STARTUP
+        window.onload = () => {
+        checkUser();
+        fetchPosts();
+        };
     </script>
-
 </body>
 </html>
