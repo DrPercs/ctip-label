@@ -103,37 +103,43 @@ async function createPost() {
     const btn = document.getElementById('upload-btn');
     const file = document.getElementById('post-audio').files[0];
     const title = document.getElementById('post-title').value;
+    const genre = document.getElementById('post-genre').value;
+    const content = document.getElementById('post-desc').value;
 
-    if (!file || !title) return alert("Заполни название и выбери файл!");
+    if (!file || !title) return alert("Название и файл — база, заполни их!");
 
     btn.disabled = true;
     btn.innerText = "UPLOADING...";
 
-    const fileName = `${Date.now()}_${file.name}`;
-    const { data: sData, error: sErr } = await _supabase.storage.from('tracks').upload(fileName, file);
-    
-    if (sErr) {
-        alert("Ошибка загрузки: " + sErr.message);
-        btn.disabled = false;
-        return;
-    }
+    try {
+        const { data: { user } } = await _supabase.auth.getUser();
+        if (!user) throw new Error("Ты не авторизован");
 
-    const { data: { publicUrl } } = _supabase.storage.from('tracks').getPublicUrl(fileName);
-    const { data: { user } } = await _supabase.auth.getUser();
-    
-    const { error: dbErr } = await _supabase.from('posts').insert([{ 
-        title, 
-        genre: document.getElementById('post-genre').value, 
-        content: document.getElementById('post-desc').value, 
-        user_id: user.id, 
-        track_url: publicUrl 
-    }]);
+        // 1. Загрузка файла
+        const fileName = `${Date.now()}_${file.name}`;
+        const { data: sData, error: sErr } = await _supabase.storage.from('tracks').upload(fileName, file);
+        if (sErr) throw sErr;
 
-    if (dbErr) {
-        alert("Ошибка БД: " + dbErr.message);
-        btn.disabled = false;
-    } else {
+        // 2. Ссылка на файл
+        const { data: { publicUrl } } = _supabase.storage.from('tracks').getPublicUrl(fileName);
+
+        // 3. Запись в БД (именно в таблицу posts)
+        const { error: dbErr } = await _supabase.from('posts').insert([{ 
+            title: title, 
+            genre: genre, 
+            content: content, 
+            user_id: user.id, 
+            track_url: publicUrl 
+        }]);
+
+        if (dbErr) throw dbErr;
+
+        alert("РЕЛИЗ ОПУБЛИКОВАН");
         location.reload();
+    } catch (err) {
+        alert("Ошибка: " + err.message);
+        btn.disabled = false;
+        btn.innerText = "Опубликовать релиз";
     }
 }
 
@@ -240,5 +246,6 @@ window.onload = () => {
     checkUser();
     fetchPosts();
 };
+
 
 
