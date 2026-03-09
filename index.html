@@ -19,106 +19,122 @@
             <a href="#" id="link-apply" onclick="showPage('apply')">Вакансии</a>
             <a href="#" id="link-settings" onclick="showPage('settings')" style="display:none">Настройки</a>
         </nav>
+        
         <div class="nav-right" id="auth-buttons">
-    </div>
+            </div>
 
-<div id="user-dropdown" class="dropdown-menu">
-    <div class="dropdown-header">
-        <span id="dropdown-user-name">USER</span>
-        <small id="dropdown-user-role">ROLE</small>
-    </div>
-    <hr>
-    <a href="#" onclick="showPage('feed'); closeDropdown()">Лента релизов</a>
-    <a href="#" onclick="showPage('liked-bits'); closeDropdown()">Liked Beats 🔥</a>
-    <a href="#" onclick="showPage('settings'); closeDropdown()">Настройки</a>
-    <hr>
-    <a href="#" onclick="logout()" class="exit-link">Выйти</a>
-</div>
+        <div id="user-dropdown" class="dropdown-menu">
+            <div class="dropdown-header">
+                <span id="dropdown-user-name">USER</span>
+                <small id="dropdown-user-role">ROLE</small>
+            </div>
+            <hr>
+            <a href="#" onclick="showPage('feed'); closeDropdown()">Лента релизов</a>
+            <a href="#" onclick="showPage('liked-bits'); closeDropdown()">Liked Beats 🔥</a>
+            <a href="#" onclick="showPage('settings'); closeDropdown()">Настройки</a>
+            <hr>
+            <a href="#" onclick="logout()" class="exit-link">Выйти</a>
+        </div>
     </header>
 
-    <div id="home" class="page active">
-        <div class="hero">
-            <p class="est">EST. 2026</p>
-            <h1>FUTURE OF <br>SOUND</h1>
-            <button class="btn btn-fill" onclick="showPage('apply')">СТАТЬ ЧАСТЬЮ</button>
-        </div>
-    </div>
-
-    <div id="feed" class="page">
-        <div id="admin-editor" style="display: none;">
-            <h2>NEW DROP</h2>
-            <div class="input-group">
-                <label>Название трека</label>
-                <input type="text" id="post-title" placeholder="Track Name">
+    <main>
+        <div id="home" class="page active">
+            <div class="hero">
+                <p class="est">EST. 2026</p>
+                <h1>FUTURE OF <br>SOUND</h1>
+                <button class="btn btn-fill" onclick="showPage('apply')">СТАТЬ ЧАСТЬЮ</button>
             </div>
-            <div class="input-group">
-                <label>Жанр</label>
-                <input type="text" id="post-genre" placeholder="Experimental">
+        </div>
+
+        <div id="feed" class="page">
+            <div id="admin-editor" style="display: none; margin-bottom: 50px;">
+                <h2>NEW DROP</h2>
+                <div class="input-group">
+                    <label>Название трека</label>
+                    <input type="text" id="post-title" placeholder="Track Name">
+                </div>
+                <div class="input-group">
+                    <label>Жанр</label>
+                    <input type="text" id="post-genre" placeholder="Experimental">
+                </div>
+                <div class="input-group">
+                    <label>Аудиофайл (MP3)</label>
+                    <input type="file" id="post-audio" accept="audio/mpeg">
+                </div>
+                <div class="input-group">
+                    <label>Описание</label>
+                    <textarea id="post-desc" placeholder="Release notes..."></textarea>
+                </div>
+                <button class="btn btn-fill" id="upload-btn" onclick="createPost()">Опубликовать релиз</button>
             </div>
-            <div class="input-group">
-                <label>Аудиофайл (MP3)</label>
-                <input type="file" id="post-audio" accept="audio/mpeg">
+
+            <h2 class="section-title">Latest Releases</h2>
+            <div class="grid" id="posts-container">
+                <p>Загрузка контента...</p>
             </div>
-            <div class="input-group">
-                <label>Описание</label>
-                <textarea id="post-desc" placeholder="Release notes..."></textarea>
+        </div>
+
+        <div id="apply" class="page">
+            <div class="apply-container">
+                <h2>APPLICATION</h2>
+                <form action="https://formspree.io/f/mzdaqvkq" method="POST">
+                    <input type="text" name="alias" placeholder="ALIAS" required>
+                    <input type="email" name="email" placeholder="EMAIL" required>
+                    <textarea name="message" placeholder="PORTFOLIO LINKS"></textarea>
+                    <button type="submit" class="btn btn-fill" style="width:100%">Отправить</button>
+                </form>
             </div>
-            <button class="btn btn-fill" id="upload-btn" onclick="createPost()">Опубликовать релиз</button>
         </div>
 
-        <h2 class="section-title">Latest Releases</h2>
-        <div class="grid" id="posts-container">
-            <p>Загрузка контента...</p>
+        <div id="settings" class="page">
+            <div style="max-width: 400px; margin: 0 auto; background: var(--card); padding: 30px; border: 1px solid #1a1a1a;">
+                <h2 style="margin-top:0">PROFILE SETTINGS</h2>
+                
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <img id="settings-avatar-preview" src="https://via.placeholder.com/100" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent);">
+                    <input type="file" id="settings-avatar-input" accept="image/*" style="display:none">
+                    <button class="btn btn-outline" style="display:block; width:100%; margin-top:10px;" onclick="document.getElementById('settings-avatar-input').click()">Изменить фото</button>
+                </div>
+
+                <div class="input-group">
+                    <label>Display Name (Alias)</label>
+                    <input type="text" id="settings-username" placeholder="New nickname">
+                </div>
+                
+                <button class="btn btn-fill" style="width: 100%; margin-bottom: 30px;" onclick="updateProfile()">Сохранить профиль</button>
+
+                <hr style="border: 0; border-top: 1px solid #222; margin-bottom: 30px;">
+
+                <h2 style="font-size: 1.2rem;">CHANGE PASSWORD</h2>
+                <div class="input-group">
+                    <input type="password" id="settings-password" placeholder="New Password">
+                </div>
+                <button class="btn btn-outline" style="width: 100%;" onclick="updatePassword()">Обновить пароль</button>
+            </div>
         </div>
-    </div>
 
-    <div id="apply" class="page">
-        <div class="apply-container">
-            <h2>APPLICATION</h2>
-            <form action="https://formspree.io/f/mzdaqvkq" method="POST">
-                <input type="text" name="alias" placeholder="ALIAS" required>
-                <input type="email" name="email" placeholder="EMAIL" required>
-                <textarea name="message" placeholder="PORTFOLIO LINKS"></textarea>
-                <button type="submit" class="btn btn-fill" style="width:100%">Отправить</button>
-            </form>
+        <div id="liked-bits" class="page">
+            <div style="padding: 20px;">
+                <h2 class="section-title">LIKED BITS BASE</h2>
+                <p style="opacity: 0.5; margin-bottom: 30px; font-family: 'Space Mono', monospace;">Твоя личная подборка битов</p>
+                <div class="grid" id="liked-bits-container">
+                    </div>
+            </div>
         </div>
-    </div>
-
-    <div id="settings" class="page">
-    <div style="max-width: 400px; margin: 0 auto; background: var(--card); padding: 30px; border: 1px solid #1a1a1a;">
-        <h2 style="margin-top:0">PROFILE SETTINGS</h2>
-        
-        <div style="text-align: center; margin-bottom: 20px;">
-            <img id="settings-avatar-preview" src="https://via.placeholder.com/100" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent);">
-            <input type="file" id="settings-avatar-input" accept="image/*" style="display:none">
-            <button class="btn btn-outline" style="display:block; width:100%; margin-top:10px;" onclick="document.getElementById('settings-avatar-input').click()">Изменить фото</button>
-        </div>
-
-        <label>Display Name (Alias)</label>
-        <input type="text" id="settings-username" placeholder="New nickname">
-        
-        <button class="btn btn-fill" style="width: 100%; margin-bottom: 30px;" onclick="updateProfile()">Сохранить профиль</button>
-
-        <hr style="border: 0; border-top: 1px solid #222; margin-bottom: 30px;">
-
-        <h2 style="font-size: 1.2rem;">CHANGE PASSWORD</h2>
-        <input type="password" id="settings-password" placeholder="New Password">
-        <button class="btn btn-outline" style="width: 100%;" onclick="updatePassword()">Обновить пароль</button>
-    </div>
-</div>
-
-    <div id="liked-bits" class="page">
-    <h2 class="section-title">LIKED BITS BASE</h2>
-    <div class="grid" id="liked-bits-container">
-        </div>
-</div>
+    </main>
 
     <div id="authModal" class="modal">
         <div class="modal-content">
             <h2 id="modalTitle">ВХОД</h2>
-            <input type="text" id="auth-username" placeholder="Твой Ник (Alias)" style="display:none; margin-bottom: 10px;">
-            <input type="email" id="auth-email" placeholder="Email">
-            <input type="password" id="auth-password" placeholder="Password">
+            <div class="input-group">
+                <input type="text" id="auth-username" placeholder="Твой Ник (Alias)" style="display:none;">
+            </div>
+            <div class="input-group">
+                <input type="email" id="auth-email" placeholder="Email">
+            </div>
+            <div class="input-group">
+                <input type="password" id="auth-password" placeholder="Password">
+            </div>
             <button class="btn btn-fill" id="auth-submit-btn" style="width:100%">Продолжить</button>
             <button class="btn btn-outline" onclick="closeModal()" style="width:100%; margin-top:10px;">Отмена</button>
         </div>
@@ -127,7 +143,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-
-
-
-
