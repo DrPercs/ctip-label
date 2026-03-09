@@ -20,9 +20,20 @@
             <a href="#" id="link-settings" onclick="showPage('settings')" style="display:none">Настройки</a>
         </nav>
         <div class="nav-right" id="auth-buttons">
-            <button class="btn btn-outline" onclick="openModal('login')">Вход</button>
-            <button class="btn btn-fill" onclick="openModal('reg')">Join</button>
-        </div>
+    </div>
+
+<div id="user-dropdown" class="dropdown-menu">
+    <div class="dropdown-header">
+        <span id="dropdown-user-name">USER</span>
+        <small id="dropdown-user-role">ROLE</small>
+    </div>
+    <hr>
+    <a href="#" onclick="showPage('feed'); closeDropdown()">Лента релизов</a>
+    <a href="#" onclick="showPage('liked-bits'); closeDropdown()">Liked Beats 🔥</a>
+    <a href="#" onclick="showPage('settings'); closeDropdown()">Настройки</a>
+    <hr>
+    <a href="#" onclick="logout()" class="exit-link">Выйти</a>
+</div>
     </header>
 
     <div id="home" class="page active">
