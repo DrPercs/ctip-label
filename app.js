@@ -238,6 +238,8 @@ async function fetchContest() {
 
     // 5. Пьедестал
     if (settings.is_final) {
+        document.body.classList.add('final-mode'); 
+        subUI.style.display = 'none';
         const top3 = entries.slice(0, 3);
         const podium = document.getElementById('podium-container');
         podium.innerHTML = top3.map((item, i) => `
@@ -246,7 +248,9 @@ async function fetchContest() {
                 <div style="font-size:0.6rem; color:var(--accent);">${item.votes_count} VOTES</div>
             </div>
         `).join('');
-    }
+    } else {
+    document.body.classList.remove('final-mode'); // Убираем, если финал окончен
+    subUI.style.display = 'block';
 
     // 6. Сетка битов
     grid.innerHTML = entries.map((item, index) => {
@@ -406,3 +410,4 @@ window.onload = () => {
     if (activePage === 'feed') fetchPosts();
     if (activePage === 'event') fetchContest();
 };
+
