@@ -158,29 +158,59 @@ async function toggleLike(postId) {
 // 3. СТРАНИЦА LIKED BITS
 async function fetchLikedBits() {
     const container = document.getElementById('liked-bits-container');
-    const { data: { user } } = await _supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await _supabase
+    container.innerHTML = "<p>Загрузка общей базы лайков...</p>";
+    
+    // Тянем все лайки из таблицы, включая данные о постах и о тех, кто лайкнул
+    // Чтобы это работало, у тебя должны быть настроены Foreign Keys в Supabase
+    const { data: allLikes, error } = await _supabase
         .from('liked_bits')
-        .select(`post_id, posts (*, profiles:user_id (username))`)
-        .eq('user_id', user.id);
+        .select(`
+            user_id,
+            profiles:user_id (username, avatar_url),
+            posts:post_id (
+                id, 
+                title, 
+                track_url, 
+                genre,
+                author:user_id (username)
+            )
+        `);
 
-    if (error || !data.length) {
-        container.innerHTML = "<p>Тут пока пусто. Лайкни что-нибудь в ленте!</p>";
+    if (error || !allLikes.length) {
+        container.innerHTML = "<p>В базе пока пусто. Лайков еще нет.</p>";
         return;
     }
 
-    container.innerHTML = data.map(item => {
-        const post = item.posts;
-        return `
-            <div class="track-card">
-                <strong>${post.title}</strong>
-                <p>by ${post.profiles?.username}</p>
-                <audio controls src="${post.track_url}"></audio>
+    // Группируем лайки по постам, чтобы если один бит лайкнули трое, он не дублировался трижды
+    const grouped = {};
+    allLikes.forEach(item => {
+        const postId = item.posts.id;
+        if (!grouped[postId]) {
+            grouped[postId] = {
+                ...item.posts,
+                likers: []
+            };
+        }
+        grouped[postId].likers.push(item.profiles.username);
+    });
+
+    container.innerHTML = Object.values(grouped).map(post => `
+        <div class="track-card">
+            <div class="track-img">
+                <span class="system-label">PROD BY: ${post.author?.username || 'UNKNOWN'}</span>
+                <small class="ref-id">ID: ${post.id.substring(0,5)}</small>
             </div>
-        `;
-    }).join('');
+            <strong>${post.title}</strong>
+            <p class="genre-tag">${post.genre || 'Beat'}</p>
+            
+            <div class="likers-list" style="margin: 10px 0; padding: 5px; background: rgba(255,0,0,0.1); border-radius: 4px;">
+                <span style="font-size: 0.6rem; color: var(--accent); font-weight: bold;">КТО ЛАЙКНУЛ:</span>
+                <p style="font-size: 0.7rem; margin: 0;">${post.likers.join(', ')}</p>
+            </div>
+
+            <audio controls src="${post.track_url}" style="width: 100%;"></audio>
+        </div>
+    `).join('');
 }
 
 // 4. ОСТАЛЬНАЯ ЛОГИКА (CRUD)
@@ -270,3 +300,4 @@ window.onload = () => {
     checkUser();
     fetchPosts();
 };
+
