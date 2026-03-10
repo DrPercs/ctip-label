@@ -3,31 +3,27 @@ const SUPABASE_KEY = 'sb_publishable_GRAiUwNcIIDaBwl8Ux1TuA_1JhaIv6h';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentMode = 'login';
-let contestState = { is_final: false };
+let contestState = { is_final: false, is_archived: false };
 
 // 1. ПРОВЕРКА ПОЛЬЗОВАТЕЛЯ И МЕНЮ
 async function checkUser() {
     const { data: { user } } = await _supabase.auth.getUser();
     const authContainer = document.getElementById('auth-buttons');
     const adminPanel = document.getElementById('admin-editor');
-    const settingsLink = document.getElementById('link-settings');
     const eventAdminControls = document.getElementById('admin-event-controls');
 
     if (!user) {
         if (adminPanel) adminPanel.style.display = 'none';
-        // Если юзера нет, показываем кнопки входа (фиксим твой баг с исчезновением)
-        authContainer.innerHTML = `
-            <button class="btn btn-outline" onclick="openModal('login')">Вход</button>
-            <button class="btn btn-fill" onclick="openModal('reg')">Join</button>
-        `;
+        if (authContainer) {
+            authContainer.innerHTML = `
+                <button class="btn btn-outline" onclick="openModal('login')">Вход</button>
+                <button class="btn btn-fill" onclick="openModal('reg')">Join</button>
+            `;
+        }
         return;
     }
 
-    const { data: profile, error } = await _supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+    const { data: profile, error } = await _supabase.from('profiles').select('*').eq('id', user.id).single();
 
     if (error) {
         authContainer.innerHTML = `<span>${user.email}</span> <button class="btn btn-outline" onclick="logout()">EXIT</button>`;
@@ -55,24 +51,16 @@ async function checkUser() {
         if (dropName) dropName.innerText = profile.username.toUpperCase();
         if (dropRole) dropRole.innerText = profile.role.toUpperCase();
 
-        // Панель постов для ролей
         if (adminPanel && (['artist', 'admin', 'beatmaker'].includes(profile.role))) {
             adminPanel.style.display = 'block';
         }
 
-        // Кнопка управления ивентом ТОЛЬКО для админа
         if (eventAdminControls && profile.role === 'admin') {
             eventAdminControls.style.display = 'block';
         }
-
-        const setUsername = document.getElementById('settings-username');
-        const setAvatar = document.getElementById('settings-avatar-preview');
-        if (setUsername) setUsername.value = profile.username || '';
-        if (setAvatar && profile.avatar_url) setAvatar.src = profile.avatar_url;
     }
 }
 
-// УПРАВЛЕНИЕ МЕНЮ
 function toggleDropdown(event) {
     event.stopPropagation();
     const menu = document.getElementById('user-dropdown');
@@ -161,7 +149,6 @@ async function toggleLike(postId) {
     fetchPosts();
 }
 
-// 3. СТРАНИЦА LIKED BITS
 async function fetchLikedBits() {
     const container = document.getElementById('liked-bits-container');
     if (!container) return;
@@ -185,7 +172,7 @@ async function fetchLikedBits() {
         if (!grouped[postId]) {
             grouped[postId] = { ...item.posts, likers: [] };
         }
-        grouped[postId].likers.push(item.profiles.username);
+        grouped[postId].likers.push(item.profiles?.username || 'ANON');
     });
 
     container.innerHTML = Object.values(grouped).map(post => `
@@ -208,19 +195,17 @@ async function fetchLikedBits() {
 // 4. КОНКУРС (EVENT) LOGIC
 async function fetchContest() {
     const grid = document.getElementById('contest-grid');
-    const subUI = document.getElementById('submission-ui'); // ДОБАВИЛИ ЭТУ СТРОКУ
-    const toggleBtn = document.getElementById('toggle-final-btn'); // И ЭТУ (для админки)
+    const subUI = document.getElementById('submission-ui');
+    const toggleBtn = document.getElementById('toggle-final-btn');
+    const leaderboard = document.getElementById('leaderboard');
     if (!grid) return;
 
-    // 1. Получаем статус ивента
     const { data: settings } = await _supabase.from('contest_settings').select('*').single();
     contestState = settings;
     
-    // Ссылка на лупы
     const loopLink = document.getElementById('loop-download-link');
     if (loopLink) loopLink.href = settings.loop_link;
 
-    // 2. Получаем роль юзера
     const { data: { user } } = await _supabase.auth.getUser();
     let isAdmin = false;
     if (user) {
@@ -228,33 +213,58 @@ async function fetchContest() {
         isAdmin = p?.role === 'admin';
     }
 
-    // 3. UI адаптация
-    document.getElementById('submission-ui').style.display = settings.is_final ? 'none' : 'block';
-    document.getElementById('leaderboard').style.display = settings.is_final ? 'block' : 'none';
-    document.getElementById('toggle-final-btn').innerText = settings.is_final ? 'STOP FINAL (RESET)' : 'START FINAL STAGE';
+    // --- РЕЖИМ АРХИВА (HALL OF FAME) ---
+    if (settings.is_archived) {
+        document.body.classList.add('final-mode');
+        if (subUI) subUI.style.display = 'none';
+        if (leaderboard) leaderboard.style.display = 'block';
+        if (toggleBtn) toggleBtn.innerText = "OPEN CONTEST (RESET ARCHIVE)";
 
-    // 4. Загрузка битов
+        const { data: winners } = await _supabase.from('contest_entries')
+            .select('*').eq('is_finalist', true).order('votes_count', { ascending: false }).limit(3);
+
+        grid.innerHTML = `<h2 style="grid-column: 1/-1; text-align:center; color:gold; letter-spacing:10px;">HALL OF FAME</h2>`;
+        grid.innerHTML += winners.map((item, i) => `
+            <div class="track-card" style="border: 1px solid gold; transform: scale(${1 - i*0.05}); background: rgba(20,20,0,0.8);">
+                <div style="font-size:2.5rem; text-align:center;">${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</div>
+                <strong style="display:block; text-align:center; font-size:1.2rem;">${item.author_name.toUpperCase()}</strong>
+                <audio controls src="${item.track_url}" style="width:100%; margin:15px 0;"></audio>
+                <div style="text-align:center; color:gold; font-family:monospace;">FINAL SCORE: ${item.votes_count}</div>
+            </div>
+        `).join('');
+        return; 
+    }
+
+    // --- РЕЖИМ ФИНАЛА И ПРИЕМА ---
+    if (settings.is_final) {
+        document.body.classList.add('final-mode');
+        if (subUI) subUI.style.display = 'none';
+        if (leaderboard) leaderboard.style.display = 'block';
+        if (toggleBtn) toggleBtn.innerText = 'STOP FINAL (RESET)';
+    } else {
+        document.body.classList.remove('final-mode');
+        if (subUI) subUI.style.display = 'block';
+        if (leaderboard) leaderboard.style.display = 'none';
+        if (toggleBtn) toggleBtn.innerText = 'START FINAL STAGE';
+    }
+
     let query = _supabase.from('contest_entries').select('*');
     if (settings.is_final) query = query.eq('is_finalist', true);
     const { data: entries } = await query.order('votes_count', { ascending: false });
 
-    // 5. Пьедестал
     if (settings.is_final) {
-        document.body.classList.add('final-mode'); 
-        subUI.style.display = 'none';
         const top3 = entries.slice(0, 3);
         const podium = document.getElementById('podium-container');
-        podium.innerHTML = top3.map((item, i) => `
-            <div class="podium-item" style="border: 1px solid ${i === 0 ? 'gold' : '#333'}">
-                <div style="font-size:1.5rem;">${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</div>
-                <div style="font-size:0.6rem; color:var(--accent);">${item.votes_count} VOTES</div>
-            </div>
-        `).join('');
-    } else {
-    document.body.classList.remove('final-mode'); // Убираем, если финал окончен
-    subUI.style.display = 'block';
+        if (podium) {
+            podium.innerHTML = top3.map((item, i) => `
+                <div class="podium-item" style="border: 1px solid ${i === 0 ? 'gold' : '#333'}">
+                    <div style="font-size:1.5rem;">${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</div>
+                    <div style="font-size:0.6rem; color:var(--accent);">${item.votes_count} VOTES</div>
+                </div>
+            `).join('');
+        }
+    }
 
-    // 6. Сетка битов
     grid.innerHTML = entries.map((item, index) => {
         const isVoted = localStorage.getItem('voted_' + item.id);
         const displayName = settings.is_final ? `УЧАСТНИК №${entries.length - index}` : item.author_name;
@@ -276,45 +286,31 @@ async function fetchContest() {
     }).join('');
 }
 
-}
-
 async function uploadContestBit() {
     const nameInput = document.getElementById('contest-author');
     const fileInput = document.getElementById('contest-file');
     const btn = document.getElementById('contest-upload-btn');
-
     if (!nameInput.value || !fileInput.files[0]) return alert("Заполни поля, бро!");
 
     const file = fileInput.files[0];
-    btn.innerText = "UPLOADING..."; 
-    btn.disabled = true;
+    btn.innerText = "UPLOADING..."; btn.disabled = true;
 
     try {
-        // Очищаем имя файла от кириллицы, пробелов и спецсимволов
         const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_'); 
         const fileName = `contest_${Date.now()}_${cleanFileName}`;
-        
-        // 1. Грузим в Storage (убедись, что бакет 'tracks' существует и он PUBLIC)
         const { error: sErr } = await _supabase.storage.from('tracks').upload(fileName, file);
         if (sErr) throw sErr;
 
-        // 2. Получаем ссылку
         const { data: { publicUrl } } = _supabase.storage.from('tracks').getPublicUrl(fileName);
-
-        // 3. Пишем в базу
         const { error: dbErr } = await _supabase.from('contest_entries').insert([{ 
-            author_name: nameInput.value, 
-            track_url: publicUrl 
+            author_name: nameInput.value, track_url: publicUrl 
         }]);
         if (dbErr) throw dbErr;
 
-        alert("Бит улетел! Удачи!");
-        location.reload();
+        alert("Бит улетел! Удачи!"); location.reload();
     } catch (err) {
-        console.error(err);
-        alert("Ошибка при загрузке: " + (err.message || "Неизвестная ошибка"));
-        btn.innerText = "ОТПРАВИТЬ";
-        btn.disabled = false;
+        alert("Ошибка: " + err.message);
+        btn.innerText = "ОТПРАВИТЬ"; btn.disabled = false;
     }
 }
 
@@ -330,10 +326,8 @@ async function voteContest(id, currentVotes) {
     if (localStorage.getItem('voted_' + id)) return alert("Уже голосовал!");
 
     if (!contestState.is_final && isAdmin) {
-        // Админ выбирает финалиста
         await _supabase.from('contest_entries').update({ is_finalist: true, votes_count: 1 }).eq('id', id);
     } else {
-        // Голосование в финале
         await _supabase.from('contest_entries').update({ votes_count: currentVotes + 1 }).eq('id', id);
     }
     
@@ -343,13 +337,20 @@ async function voteContest(id, currentVotes) {
 
 async function toggleFinalStage() {
     const newState = !contestState.is_final;
-    await _supabase.from('contest_settings').update({ is_final: newState }).eq('id', 1);
+    await _supabase.from('contest_settings').update({ is_final: newState, is_archived: false }).eq('id', 1);
+    location.reload();
+}
+
+async function toggleArchive() {
+    const newState = !contestState.is_archived;
+    await _supabase.from('contest_settings').update({ is_archived: newState, is_final: false }).eq('id', 1);
     location.reload();
 }
 
 // 5. CRUD И СИСТЕМНЫЕ ФУНКЦИИ
 async function deletePost(postId) {
     if (!confirm('Удалить навсегда?')) return;
+    await _supabase.from('liked_bits').delete().eq('post_id', postId);
     await _supabase.from('posts').delete().eq('id', postId);
     fetchPosts();
 }
@@ -361,7 +362,7 @@ async function createPost() {
     if (!file || !title) return alert("Заполни данные!");
     btn.disabled = true;
 
-    const fileName = `${Date.now()}_${file.name}`;
+    const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
     await _supabase.storage.from('tracks').upload(fileName, file);
     const { data: { publicUrl } } = _supabase.storage.from('tracks').getPublicUrl(fileName);
     const { data: { user } } = await _supabase.auth.getUser();
@@ -410,12 +411,9 @@ async function updateProfile() {
 function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-center a').forEach(a => a.classList.remove('active'));
-    
     const targetPage = document.getElementById(pageId);
     if (targetPage) targetPage.classList.add('active');
-    
     document.getElementById('link-' + (pageId === 'liked-bits' ? 'feed' : pageId))?.classList.add('active');
-    
     if (pageId === 'feed') fetchPosts();
     if (pageId === 'liked-bits') fetchLikedBits();
     if (pageId === 'event') fetchContest();
@@ -426,19 +424,13 @@ function openModal(type) {
     document.getElementById('authModal').style.display = 'flex';
     document.getElementById('modalTitle').innerText = (type === 'login' ? 'ВХОД' : 'РЕГИСТРАЦИЯ');
     document.getElementById('auth-username').style.display = (type === 'reg' ? 'block' : 'none');
-    document.getElementById('auth-submit-btn').onclick = handleAuth;
 }
 
 function closeModal() { document.getElementById('authModal').style.display = 'none'; }
 
 window.onload = () => {
     checkUser();
-    // Определяем, какая страница активна при загрузке
     const activePage = document.querySelector('.page.active')?.id;
     if (activePage === 'feed') fetchPosts();
     if (activePage === 'event') fetchContest();
 };
-
-
-
-
