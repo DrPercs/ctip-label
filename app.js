@@ -274,6 +274,8 @@ async function fetchContest() {
     }).join('');
 }
 
+}
+
 async function uploadContestBit() {
     const name = document.getElementById('contest-author').value;
     const file = document.getElementById('contest-file').files[0];
@@ -410,4 +412,5 @@ window.onload = () => {
     if (activePage === 'feed') fetchPosts();
     if (activePage === 'event') fetchContest();
 };
+
 
