@@ -185,3 +185,52 @@ audio { width: 100%; margin: 15px 0; filter: invert(1); height: 30px; }
 .podium-item:nth-child(2) { height: 80%; }  /* 2 место */
 .podium-item:nth-child(3) { height: 60%; }  /* 3 место */
 
+/* Эффект для финала */
+body.final-mode {
+    background: radial-gradient(circle at top, #1a1500 0%, #000 70%);
+    transition: background 1s ease;
+}
+
+body.final-mode .section-title {
+    color: gold;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    letter-spacing: 5px;
+}
+
+/* Пьедестал */
+#podium-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 10px;
+    height: 120px;
+    margin: 40px 0;
+}
+
+.podium-item {
+    background: #0a0a0a;
+    width: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-top: 2px solid #333;
+    transition: all 0.5s ease;
+}
+
+/* Золото для первого места */
+.podium-item:nth-child(1) { 
+    height: 100%; 
+    border-color: gold; 
+    box-shadow: 0 -10px 20px rgba(255, 215, 0, 0.1);
+    order: 2; /* Центр */
+}
+.podium-item:nth-child(2) { height: 70%; order: 1; } /* Слева */
+.podium-item:nth-child(3) { height: 50%; order: 3; } /* Справа */
+
+/* Анонимные карточки в финале */
+body.final-mode .track-card {
+    border: 1px solid #222;
+    background: rgba(10, 10, 10, 0.8);
+    backdrop-filter: blur(5px);
+}
