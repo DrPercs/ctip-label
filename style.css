@@ -166,3 +166,22 @@ audio { width: 100%; margin: 15px 0; filter: invert(1); height: 30px; }
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+#podium-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 15px;
+    height: 150px;
+    margin-top: 20px;
+}
+.podium-item {
+    background: #0f0f0f;
+    width: 100px;
+    border-radius: 5px 5px 0 0;
+    transition: 0.3s;
+}
+.podium-item:nth-child(1) { height: 100%; border-color: gold !important; } /* 1 место */
+.podium-item:nth-child(2) { height: 80%; }  /* 2 место */
+.podium-item:nth-child(3) { height: 60%; }  /* 3 место */
+
