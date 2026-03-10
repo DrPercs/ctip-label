@@ -290,7 +290,9 @@ async function uploadContestBit() {
     btn.disabled = true;
 
     try {
-        const fileName = `contest_${Date.now()}_${file.name}`;
+        // Очищаем имя файла от кириллицы, пробелов и спецсимволов
+        const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_'); 
+        const fileName = `contest_${Date.now()}_${cleanFileName}`;
         
         // 1. Грузим в Storage (убедись, что бакет 'tracks' существует и он PUBLIC)
         const { error: sErr } = await _supabase.storage.from('tracks').upload(fileName, file);
@@ -436,6 +438,7 @@ window.onload = () => {
     if (activePage === 'feed') fetchPosts();
     if (activePage === 'event') fetchContest();
 };
+
 
 
 
