@@ -234,3 +234,58 @@ body.final-mode .track-card {
     background: rgba(10, 10, 10, 0.8);
     backdrop-filter: blur(5px);
 }
+
+
+.main-footer {
+    margin-top: 50px;
+    padding: 40px 20px;
+    background: #0a0a0a;
+    border-top: 1px solid #222;
+    font-family: 'Courier New', Courier, monospace; /* Для системного вида */
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px;
+}
+
+.footer-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.footer-link {
+    color: #eee;
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: color 0.3s;
+}
+
+.footer-link:hover {
+    color: var(--accent); /* Твой красный/золотой цвет */
+}
+
+.small-text {
+    font-size: 0.6rem;
+    opacity: 0.6;
+}
+
+.copyright {
+    font-size: 0.5rem;
+    margin-top: 15px;
+    color: #444;
+}
+
+.opacity-50 { opacity: 0.5; cursor: not-allowed; }
+
+/* Адаптив для мобилок */
+@media (max-width: 600px) {
+    .footer-content {
+        text-align: center;
+        grid-template-columns: 1fr;
+    }
+}
