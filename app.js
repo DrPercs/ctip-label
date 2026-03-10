@@ -419,11 +419,28 @@ function showPage(pageId) {
     if (pageId === 'event') fetchContest();
 }
 
+
 function openModal(type) {
     currentMode = type;
-    document.getElementById('authModal').style.display = 'flex';
-    document.getElementById('modalTitle').innerText = (type === 'login' ? 'ВХОД' : 'РЕГИСТРАЦИЯ');
-    document.getElementById('auth-username').style.display = (type === 'reg' ? 'block' : 'none');
+    const modal = document.getElementById('authModal');
+    const submitBtn = document.getElementById('auth-submit-btn');
+    
+    if (modal) modal.style.display = 'flex';
+    if (document.getElementById('modalTitle')) {
+        document.getElementById('modalTitle').innerText = (type === 'login' ? 'ВХОД' : 'РЕГИСТРАЦИЯ');
+    }
+    
+    // Показываем поле юзернейма только для регистрации
+    const userField = document.getElementById('auth-username');
+    if (userField) userField.style.display = (type === 'reg' ? 'block' : 'none');
+
+    // ПРИНУДИТЕЛЬНО ПРИВЯЗЫВАЕМ КЛИК
+    if (submitBtn) {
+        submitBtn.onclick = function() {
+            console.log('Кнопка нажата, режим:', currentMode); // Это для проверки в консоли
+            handleAuth();
+        };
+    }
 }
 
 function closeModal() { document.getElementById('authModal').style.display = 'none'; }
@@ -434,3 +451,4 @@ window.onload = () => {
     if (activePage === 'feed') fetchPosts();
     if (activePage === 'event') fetchContest();
 };
+
