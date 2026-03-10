@@ -423,22 +423,20 @@ function showPage(pageId) {
 function openModal(type) {
     currentMode = type;
     const modal = document.getElementById('authModal');
-    const submitBtn = document.getElementById('auth-submit-btn');
-    
-    if (modal) modal.style.display = 'flex';
-    if (document.getElementById('modalTitle')) {
-        document.getElementById('modalTitle').innerText = (type === 'login' ? 'ВХОД' : 'РЕГИСТРАЦИЯ');
-    }
-    
-    // Показываем поле юзернейма только для регистрации
+    const title = document.getElementById('modalTitle');
     const userField = document.getElementById('auth-username');
+    const submitBtn = document.getElementById('auth-submit-btn');
+
+    if (modal) modal.style.display = 'flex';
+    if (title) title.innerText = (type === 'login' ? 'ВХОД' : 'РЕГИСТРАЦИЯ');
     if (userField) userField.style.display = (type === 'reg' ? 'block' : 'none');
 
-    // ПРИНУДИТЕЛЬНО ПРИВЯЗЫВАЕМ КЛИК
+    // ПЕРЕНАЗНАЧАЕМ КЛИК ЗАНОВО КАЖДЫЙ РАЗ
     if (submitBtn) {
+        submitBtn.onclick = null; // Сначала обнуляем старое
         submitBtn.onclick = function() {
-            console.log('Кнопка нажата, режим:', currentMode); // Это для проверки в консоли
-            handleAuth();
+            console.log("Кнопка нажата! Режим:", currentMode);
+            handleAuth(); // Запускаем саму авторизацию
         };
     }
 }
@@ -451,4 +449,5 @@ window.onload = () => {
     if (activePage === 'feed') fetchPosts();
     if (activePage === 'event') fetchContest();
 };
+
 
