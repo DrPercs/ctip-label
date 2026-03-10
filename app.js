@@ -208,6 +208,8 @@ async function fetchLikedBits() {
 // 4. КОНКУРС (EVENT) LOGIC
 async function fetchContest() {
     const grid = document.getElementById('contest-grid');
+    const subUI = document.getElementById('submission-ui'); // ДОБАВИЛИ ЭТУ СТРОКУ
+    const toggleBtn = document.getElementById('toggle-final-btn'); // И ЭТУ (для админки)
     if (!grid) return;
 
     // 1. Получаем статус ивента
@@ -277,19 +279,41 @@ async function fetchContest() {
 }
 
 async function uploadContestBit() {
-    const name = document.getElementById('contest-author').value;
-    const file = document.getElementById('contest-file').files[0];
-    if (!name || !file) return alert("Заполни поля!");
-
+    const nameInput = document.getElementById('contest-author');
+    const fileInput = document.getElementById('contest-file');
     const btn = document.getElementById('contest-upload-btn');
-    btn.innerText = "UPLOADING..."; btn.disabled = true;
 
-    const fileName = `contest_${Date.now()}`;
-    await _supabase.storage.from('tracks').upload(fileName, file);
-    const { data: { publicUrl } } = _supabase.storage.from('tracks').getPublicUrl(fileName);
+    if (!nameInput.value || !fileInput.files[0]) return alert("Заполни поля, бро!");
 
-    await _supabase.from('contest_entries').insert([{ author_name: name, track_url: publicUrl }]);
-    alert("Отправлено!"); location.reload();
+    const file = fileInput.files[0];
+    btn.innerText = "UPLOADING..."; 
+    btn.disabled = true;
+
+    try {
+        const fileName = `contest_${Date.now()}_${file.name}`;
+        
+        // 1. Грузим в Storage (убедись, что бакет 'tracks' существует и он PUBLIC)
+        const { error: sErr } = await _supabase.storage.from('tracks').upload(fileName, file);
+        if (sErr) throw sErr;
+
+        // 2. Получаем ссылку
+        const { data: { publicUrl } } = _supabase.storage.from('tracks').getPublicUrl(fileName);
+
+        // 3. Пишем в базу
+        const { error: dbErr } = await _supabase.from('contest_entries').insert([{ 
+            author_name: nameInput.value, 
+            track_url: publicUrl 
+        }]);
+        if (dbErr) throw dbErr;
+
+        alert("Бит улетел! Удачи!");
+        location.reload();
+    } catch (err) {
+        console.error(err);
+        alert("Ошибка при загрузке: " + (err.message || "Неизвестная ошибка"));
+        btn.innerText = "ОТПРАВИТЬ";
+        btn.disabled = false;
+    }
 }
 
 async function voteContest(id, currentVotes) {
@@ -412,5 +436,6 @@ window.onload = () => {
     if (activePage === 'feed') fetchPosts();
     if (activePage === 'event') fetchContest();
 };
+
 
 
