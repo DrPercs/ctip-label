@@ -135,10 +135,11 @@
             <div class="podium" id="podium-container"></div>
         </div>
 
-        <div id="admin-event-controls" style="display:none; background: #1a1a1a; padding: 20px; border: 1px solid var(--accent); margin-bottom: 30px; text-align:center;">
-            <p>ТЫ АДМИН: УПРАВЛЕНИЕ ИВЕНТОМ</p>
-            <button class="btn btn-fill" id="toggle-final-btn" onclick="toggleFinalStage()">START FINAL STAGE</button>
-        </div>
+        <div id="admin-event-controls" style="display:none; margin-top:20px; padding:15px; background:rgba(255,0,0,0.1);">
+    <h4>EVENT CONTROL</h4>
+    <button class="btn btn-outline" id="toggle-final-btn" onclick="toggleFinalStage()">START FINAL</button>
+    <button class="btn btn-fill" onclick="toggleArchive()" style="background:gold; color:black;">CLOSE & ARCHIVE</button>
+    </div>
 
         <div id="submission-ui">
             <div class="info-block" style="border: 1px solid #333; padding: 20px; margin-bottom: 30px;">
@@ -175,6 +176,7 @@
     <script src="app.js"></script>
 </body>
 </html>
+
 
 
 
