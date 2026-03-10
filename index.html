@@ -16,6 +16,7 @@
         <nav class="nav-center">
             <a href="#" id="link-home" onclick="showPage('home')" class="active">Главная</a>
             <a href="#" id="link-feed" onclick="showPage('feed')">POSTS</a>
+            <a href="#" id="link-event" onclick="showPage('event')" style="color: var(--accent); font-weight: 900;">[ EVENT ]</a>
             <a href="#" id="link-apply" onclick="showPage('apply')">Вакансии</a>
             <a href="#" id="link-settings" onclick="showPage('settings')" style="display:none">Настройки</a>
         </nav>
@@ -125,6 +126,36 @@
         </div>
     </main>
 
+    <div id="event" class="page">
+    <div class="container">
+        <h2 class="section-title" id="event-title">CONTEST: BAD LOOPS</h2>
+        
+        <div id="leaderboard" style="display:none; margin-bottom: 40px;">
+            <h3 style="text-align:center; color:gold;">TOP 3 LEADERBOARD</h3>
+            <div class="podium" id="podium-container"></div>
+        </div>
+
+        <div id="admin-event-controls" style="display:none; background: #1a1a1a; padding: 20px; border: 1px solid var(--accent); margin-bottom: 30px; text-align:center;">
+            <p>ТЫ АДМИН: УПРАВЛЕНИЕ ИВЕНТОМ</p>
+            <button class="btn btn-fill" id="toggle-final-btn" onclick="toggleFinalStage()">START FINAL STAGE</button>
+        </div>
+
+        <div id="submission-ui">
+            <div class="info-block" style="border: 1px solid #333; padding: 20px; margin-bottom: 30px;">
+                <p>СКАЧАТЬ ЛУПЫ: <a href="#" id="loop-download-link" style="color:var(--accent)">[ CLICK HERE ]</a></p>
+                <hr style="border-color:#222">
+                <h3>ЗАГРУЗИТЬ СВОЙ БИТ</h3>
+                <input type="text" id="contest-author" placeholder="Твой ник / Телега">
+                <input type="file" id="contest-file" accept="audio/mpeg" style="margin: 10px 0;">
+                <button class="btn btn-fill" id="contest-upload-btn" onclick="uploadContestBit()">ОТПРАВИТЬ</button>
+            </div>
+        </div>
+
+        <h3 id="contest-status-text">ВСЕ УЧАСТНИКИ:</h3>
+        <div class="grid" id="contest-grid"></div>
+    </div>
+</div>
+
     <div id="authModal" class="modal">
         <div class="modal-content">
             <h2 id="modalTitle">ВХОД</h2>
@@ -145,4 +176,5 @@
     <script src="app.js"></script>
 </body>
 </html>
+
 
