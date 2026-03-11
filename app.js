@@ -256,12 +256,18 @@ async function fetchContest() {
         const top3 = entries.slice(0, 3);
         const podium = document.getElementById('podium-container');
         if (podium) {
-            podium.innerHTML = top3.map((item, i) => `
-                <div class="podium-item" style="border: 1px solid ${i === 0 ? 'gold' : '#333'}">
+            podium.innerHTML = top3.map((item, i) => {
+                // Вычисляем порядковый номер так же, как в основном списке
+                const displayID = `№${entries.length - entries.indexOf(item)}`;
+                
+                return `
+                <div class="podium-item" style="border: 1px solid ${i === 0 ? 'gold' : '#333'}; padding: 10px; text-align: center;">
                     <div style="font-size:1.5rem;">${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</div>
+                    <div style="font-size:0.8rem; font-weight: bold; color: #fff; margin: 5px 0;">${displayID}</div>
                     <div style="font-size:0.6rem; color:var(--accent);">${item.votes_count} VOTES</div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         }
     }
 
@@ -449,5 +455,6 @@ window.onload = () => {
     if (activePage === 'feed') fetchPosts();
     if (activePage === 'event') fetchContest();
 };
+
 
 
