@@ -186,10 +186,5 @@ function goToAdmin() {
 // --------------------------
 // GLOBAL EXPORTS
 // --------------------------
-window.checkUser = checkUser;
-window.handleAuth = handleAuth;
-window.logout = logout;
-window.toggleProfileMenu = toggleProfileMenu;
-window.goToLikedBeats = goToLikedBeats;
-window.goToProfile = goToProfile;
-window.goToAdmin = goToAdmin;
+window.showPage = showPage;
+window.openModal = openModal;
