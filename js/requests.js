@@ -94,8 +94,7 @@ async function submitToCurrentRequest() {
     fetchSubmissions(currentRequestId);
 }
 
-// 👇 ВАЖНО (фикс кликов)
-window.fetchRequests = fetchRequests;
 window.createRequest = createRequest;
+window.fetchRequests = fetchRequests;
 window.openRequest = openRequest;
 window.submitToCurrentRequest = submitToCurrentRequest;
