@@ -9,7 +9,12 @@ function showPage(pageId) {
 }
 
 function openModal(id) {
-    document.getElementById(id).style.display = "block";
+    const el = document.getElementById(id);
+    if (!el) {
+        console.log('modal not found:', id);
+        return;
+    }
+    el.style.display = 'block';
 }
 
 function closeModal(id) {
