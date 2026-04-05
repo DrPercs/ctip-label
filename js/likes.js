@@ -21,10 +21,4 @@ async function toggleLike(postId) {
     fetchPosts();
 }
 
-window.createRequest = createRequest;
-window.fetchRequests = fetchRequests;
-window.showPage = showPage;
 window.toggleLike = toggleLike;
-window.fetchPosts = fetchPosts;
-window.handleAuth = handleAuth;
-window.logout = logout;
