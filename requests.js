@@ -1,3 +1,25 @@
+let currentRequestId = null;
+
+// загрузка всех рефов
+async function fetchRequests() {
+    const container = document.getElementById('requests-container');
+
+    const { data } = await _supabase
+        .from('requests')
+        .select(`*, profiles:user_id (username)`)
+        .order('created_at', { ascending: false });
+
+    container.innerHTML = data.map(req => `
+        <div class="track-card" onclick="openRequest('${req.id}')">
+            <strong>${req.title}</strong>
+            <p>${req.style || ''} ${req.bpm ? '| ' + req.bpm + ' BPM' : ''}</p>
+            <p>${req.description || ''}</p>
+            <small>by ${req.profiles?.username || 'user'}</small>
+        </div>
+    `).join('');
+}
+
+// создание рефа
 async function createRequest() {
     const { data: { user } } = await _supabase.auth.getUser();
     if (!user) return alert("Войди!");
@@ -13,51 +35,67 @@ async function createRequest() {
     fetchRequests();
 }
 
-async function fetchRequests() {
-    const container = document.getElementById('requests-container');
+// открыть страницу рефа
+async function openRequest(id) {
+    currentRequestId = id;
+    showPage('request-view');
 
-    const { data } = await _supabase
+    const { data: req } = await _supabase
         .from('requests')
         .select(`*, profiles:user_id (username)`)
+        .eq('id', id)
+        .single();
+
+    document.getElementById('request-title').innerText = req.title;
+    document.getElementById('request-meta').innerText =
+        `${req.style || ''} ${req.bpm ? '| ' + req.bpm + ' BPM' : ''}`;
+    document.getElementById('request-desc').innerText = req.description || '';
+
+    fetchSubmissions(id);
+}
+
+// загрузка всех битов под реф
+async function fetchSubmissions(requestId) {
+    const container = document.getElementById('submissions-container');
+
+    const { data } = await _supabase
+        .from('request_submissions')
+        .select(`*, profiles:user_id (username)`)
+        .eq('request_id', requestId)
         .order('created_at', { ascending: false });
 
-    container.innerHTML = data.map(req => `
+    container.innerHTML = data.map(sub => `
         <div class="track-card">
-            <strong>${req.title}</strong>
-            <p>${req.style} | ${req.bpm} BPM</p>
-            <p>${req.description}</p>
-
-            <small>by ${req.profiles?.username}</small>
-
-            <input type="file" onchange="submitBeat(event, '${req.id}')">
+            <strong>${sub.profiles?.username || 'user'}</strong>
+            <audio controls src="${sub.track_url}"></audio>
         </div>
     `).join('');
 }
 
-async function submitBeat(e, requestId) {
-    const file = e.target.files[0];
+// отправка бита
+async function submitToCurrentRequest() {
+    const file = document.getElementById('submission-file').files[0];
+    if (!file) return alert("Выбери файл");
 
     const { data: { user } } = await _supabase.auth.getUser();
+    if (!user) return alert("Войди!");
 
-    const fileName = `req_${Date.now()}_${file.name}`;
+    const fileName = `sub_${Date.now()}_${file.name}`;
     await _supabase.storage.from('tracks').upload(fileName, file);
 
     const { data } = _supabase.storage.from('tracks').getPublicUrl(fileName);
 
     await _supabase.from('request_submissions').insert([{
-        request_id: requestId,
+        request_id: currentRequestId,
         user_id: user.id,
         track_url: data.publicUrl
     }]);
 
-    alert("Отправлено 🔥");
+    fetchSubmissions(currentRequestId);
 }
 
-window.createRequest = createRequest;
+// 👇 ВАЖНО (фикс кликов)
 window.fetchRequests = fetchRequests;
-window.submitBeat = submitBeat;
-window.showPage = showPage;
-window.toggleLike = toggleLike;
-window.fetchPosts = fetchPosts;
-window.handleAuth = handleAuth;
-window.logout = logout;
+window.createRequest = createRequest;
+window.openRequest = openRequest;
+window.submitToCurrentRequest = submitToCurrentRequest;
