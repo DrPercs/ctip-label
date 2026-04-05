@@ -6,7 +6,7 @@ async function fetchRequests() {
 
     const { data } = await _supabase
         .from('requests')
-        .select(`*, profiles:user_id (username)`)
+        .select('*')
         .order('created_at', { ascending: false });
 
     container.innerHTML = data.map(req => `
@@ -42,7 +42,7 @@ async function openRequest(id) {
 
     const { data: req } = await _supabase
         .from('requests')
-        .select(`*, profiles:user_id (username)`)
+        .select('*')
         .eq('id', id)
         .single();
 
@@ -60,7 +60,7 @@ async function fetchSubmissions(requestId) {
 
     const { data } = await _supabase
         .from('request_submissions')
-        .select(`*, profiles:user_id (username)`)
+        .select('*')
         .eq('request_id', requestId)
         .order('created_at', { ascending: false });
 
