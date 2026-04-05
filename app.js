@@ -1,17 +1,12 @@
 window.onload = () => {
-    checkUser();
+    try {
+        checkUser();
 
-    const activePage = document.querySelector('.page.active')?.id;
+        const activePage = document.querySelector('.page.active')?.id;
 
-    if (activePage === 'feed') fetchPosts();
-    if (activePage === 'requests') fetchRequests();
-
-    window.createRequest = createRequest;
-window.fetchRequests = fetchRequests;
-window.submitBeat = submitBeat;
-window.showPage = showPage;
-window.toggleLike = toggleLike;
-window.fetchPosts = fetchPosts;
-window.handleAuth = handleAuth;
-window.logout = logout;
+        if (activePage === 'feed') fetchPosts();
+        if (activePage === 'requests') fetchRequests();
+    } catch (e) {
+        console.error(e);
+    }
 };
