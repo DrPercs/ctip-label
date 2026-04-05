@@ -4,8 +4,9 @@ function showPage(pageId) {
     const page = document.getElementById(pageId);
     if (page) page.classList.add('active');
 
-    if (pageId === 'feed') fetchPosts();
-    if (pageId === 'requests') fetchRequests();
+    // безопасные вызовы (чтобы не падало)
+    if (pageId === 'feed' && window.fetchPosts) fetchPosts();
+    if (pageId === 'requests' && window.fetchRequests) fetchRequests();
 }
 
 function openModal(id) {
@@ -15,14 +16,15 @@ function openModal(id) {
         return;
     }
     el.style.display = 'block';
-
-
-function closeModal(id) {
-    document.getElementById(id).style.display = "none";
 }
 
+function closeModal(id = 'authModal') {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = 'none';
+}
+
+// экспорт
+window.showPage = showPage;
 window.openModal = openModal;
 window.closeModal = closeModal;
-
-// фикс для onclick
-window.showPage = showPage;
