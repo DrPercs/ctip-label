@@ -48,7 +48,7 @@
     <div class="grid" id="posts-container"></div>
 </div>
 
-<!-- REFS (НОВОЕ) -->
+<!-- REFS -->
 <div id="requests" class="page">
     <h2 class="section-title">REF REQUESTS</h2>
 
@@ -62,6 +62,21 @@
     </div>
 
     <div class="grid" id="requests-container"></div>
+</div>
+
+<!-- ОДИН РЕФ -->
+<div id="request-view" class="page">
+    <h2 id="request-title"></h2>
+    <p id="request-meta"></p>
+    <p id="request-desc"></p>
+
+    <div style="margin:20px 0;">
+        <input type="file" id="submission-file">
+        <button class="btn btn-fill" onclick="submitToCurrentRequest()">Отправить бит</button>
+    </div>
+
+    <h3>SUBMISSIONS</h3>
+    <div id="submissions-container" class="grid"></div>
 </div>
 
 <!-- EVENT -->
@@ -108,7 +123,7 @@
 <script src="js/likes.js"></script>
 <script src="js/requests.js"></script>
 <script src="js/ui.js"></script>
-<script src="app.js"></script>
+<script src="js/app.js"></script>
 
 </body>
 </html>
