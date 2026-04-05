@@ -9,15 +9,13 @@ async function fetchRequests() {
         .select('*')
         .order('created_at', { ascending: false });
 
-    container.innerHTML = data.map(req => `
-        <div class="track-card" onclick="openRequest('${req.id}')">
-            <strong>${req.title}</strong>
-            <p>${req.style || ''} ${req.bpm ? '| ' + req.bpm + ' BPM' : ''}</p>
-            <p>${req.description || ''}</p>
-            <small>by ${req.profiles?.username || 'user'}</small>
-        </div>
-    `).join('');
-}
+    const safe = data || [];
+
+container.innerHTML = safe.map(req => `
+  <div class="track-card">
+    <strong>${req.title}</strong>
+  </div>
+`).join('');
 
 // создание рефа
 async function createRequest() {
