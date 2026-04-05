@@ -15,7 +15,7 @@ function openModal(id) {
         return;
     }
     el.style.display = 'block';
-}
+
 
 function closeModal(id) {
     document.getElementById(id).style.display = "none";
