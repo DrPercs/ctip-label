@@ -8,5 +8,16 @@ function showPage(pageId) {
     if (pageId === 'requests') fetchRequests();
 }
 
+function openModal(id) {
+    document.getElementById(id).style.display = "block";
+}
+
+function closeModal(id) {
+    document.getElementById(id).style.display = "none";
+}
+
+window.openModal = openModal;
+window.closeModal = closeModal;
+
 // фикс для onclick
 window.showPage = showPage;
