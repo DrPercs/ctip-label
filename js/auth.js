@@ -2,7 +2,7 @@
 // AUTH SYSTEM (FINAL)
 // ==========================
 
-let currentMode = 'login';
+
 window.currentUser = null;
 
 // --------------------------
