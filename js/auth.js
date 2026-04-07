@@ -46,11 +46,18 @@ async function checkUser() {
         avatarUrl = fallback;
     }
 
-    // Управляем кнопкой создания рефа (только Артисты и Админы)
-    const createRefBtn = document.getElementById('create-ref-btn');
-    if (createRefBtn) {
-        createRefBtn.style.display = (window.userRole === 'artist' || window.userRole === 'admin') ? 'inline-block' : 'none';
-    }
+const refForm = document.getElementById('create-ref-form');
+const isArtistOrAdmin = (window.userRole === 'artist' || window.userRole === 'admin');
+
+if (refForm) {
+    refForm.style.display = isArtistOrAdmin ? 'block' : 'none';
+}
+
+// Кнопка в хедере (если хочешь оставить её для быстрого скролла к форме)
+const createRefBtn = document.getElementById('create-ref-btn');
+if (createRefBtn) {
+    createRefBtn.style.display = isArtistOrAdmin ? 'inline-block' : 'none';
+}
 
     // Рисуем аватарку и ник в хедере
     authContainer.innerHTML = `
