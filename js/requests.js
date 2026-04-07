@@ -80,24 +80,35 @@ async function createRequest() {
 // 3. ОТКРЫТИЕ ДЕТАЛЕЙ (Показать биты на конкретный реф)
 async function openRequestDetails(reqId) {
     currentRequestId = reqId;
-    showPage('request-detail'); // Создадим эту страницу в HTML
+    
+    // 1. Сначала переключаем страницу
+    showPage('request-detail'); 
     
     const container = document.getElementById('submissions-list');
+    if (!container) {
+        console.error("Ошибка: Не найден элемент submissions-list в HTML!");
+        return;
+    }
+    
     container.innerHTML = '<p>LOADING BEATS...</p>';
 
+    // 2. Тянем данные
     const { data: subs, error } = await _supabase
         .from('request_submissions')
         .select('*, profiles(username)')
         .eq('request_id', reqId);
 
-    if (error) return;
+    if (error) {
+        container.innerHTML = '<p>Ошибка загрузки</p>';
+        return;
+    }
 
     container.innerHTML = subs.map(sub => `
         <div class="track-card">
             <small>BEAT BY: ${sub.profiles?.username || 'ANON'}</small>
             <audio src="${sub.track_url}" controls style="width:100%; filter:invert(1); margin-top:10px;"></audio>
         </div>
-    `).join('') || '<p>Пока никто не откликнулся</p>';
+    `).join('') || '<p>Пока никто не откликнулся. Будь первым!</p>';
 }
 
 // 4. ЗАГРУЗКА БИТА (От Битмейкера)
