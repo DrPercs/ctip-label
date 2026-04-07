@@ -2,7 +2,7 @@
 // AUTH SYSTEM (FINAL)
 // ==========================
 
-
+window.userRole = 'guest'; // По умолчанию
 window.currentUser = null;
 
 // --------------------------
@@ -14,6 +14,11 @@ async function checkUser() {
 
     const { data: { session } } = await _supabase.auth.getSession();
     const user = session?.user;
+
+
+const { data: profile } = await _supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+window.userRole = profile?.role || 'guest';
+window.currentUserId = user.id;
 
     if (!user) {
         authContainer.innerHTML = `
