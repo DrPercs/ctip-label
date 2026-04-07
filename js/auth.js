@@ -15,40 +15,49 @@ async function checkUser() {
     const { data: { session } } = await _supabase.auth.getSession();
     const user = session?.user;
 
-
-const { data: profile } = await _supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-window.userRole = profile?.role || 'guest';
-window.currentUserId = user.id;
-
+    // 1. Если юзера нет — сразу рисуем кнопки входа и выходим
     if (!user) {
+        window.userRole = 'guest';
+        window.currentUserId = null;
+        
         authContainer.innerHTML = `
             <button class="btn btn-outline" onclick="openModal('login')">Вход</button>
             <button class="btn btn-fill" onclick="openModal('reg')">Join</button>
         `;
+
+        // Скрываем кнопку создания рефа для гостей
+        const createRefBtn = document.getElementById('create-ref-btn');
+        if (createRefBtn) createRefBtn.style.display = 'none';
         return;
     }
 
+    // 2. Если юзер есть — тянем профиль ОДИН раз
     const { data: profile } = await _supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    
+    // Сохраняем данные глобально
+    window.userRole = profile?.role || 'guest';
+    window.currentUserId = user.id;
 
-    // ПРЯМАЯ ССЫЛКА НА ЗАГЛУШКУ (чтобы точно не было 404)
+    // ПРЯМАЯ ССЫЛКА НА ЗАГЛУШКУ
     const fallback = 'https://i.imgur.com/6VBx3io.png';
     
-    // Проверяем: если в базе пусто или там старый битый путь
     let avatarUrl = profile?.avatar_url;
     if (!avatarUrl || avatarUrl.includes('default-avatar.png')) {
         avatarUrl = fallback;
     }
 
+    // Управляем кнопкой создания рефа (только Артисты и Админы)
     const createRefBtn = document.getElementById('create-ref-btn');
-if (createRefBtn) {
-    createRefBtn.style.display = (profile?.role === 'artist' || profile?.role === 'admin') ? 'inline-block' : 'none';
-}
+    if (createRefBtn) {
+        createRefBtn.style.display = (window.userRole === 'artist' || window.userRole === 'admin') ? 'inline-block' : 'none';
+    }
 
+    // Рисуем аватарку и ник в хедере
     authContainer.innerHTML = `
         <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="showPage('profile')">
             <div style="text-align:right">
                 <div style="font-size:0.7rem; font-weight:900;">${(profile?.username || 'USER').toUpperCase()}</div>
-                <div style="font-size:0.5rem; color:var(--accent); opacity:0.7;">PROFILE ></div>
+                <div style="font-size:0.5rem; color:var(--accent); opacity:0.7;">${(window.userRole).toUpperCase()} ></div>
             </div>
             <img src="${avatarUrl}" 
                  onerror="this.src='${fallback}'" 
@@ -56,7 +65,7 @@ if (createRefBtn) {
         </div>
     `;
 
-    // Обновляем превью на странице профиля, если она открыта
+    // Обновляем превью в профиле
     const preview = document.getElementById('profile-preview-img');
     if (preview) preview.src = avatarUrl;
 }
