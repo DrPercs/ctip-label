@@ -1,3 +1,4 @@
+let currentMode = 'login';
 function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
 
@@ -9,13 +10,24 @@ function showPage(pageId) {
     if (pageId === 'requests' && window.fetchRequests) fetchRequests();
 }
 
-function openModal(id) {
-    const el = document.getElementById(id);
-    if (!el) {
-        console.log('modal not found:', id);
-        return;
+function openModal(mode) {
+    const modal = document.getElementById('authModal');
+    if (!modal) return;
+
+    currentMode = mode;
+
+    const username = document.getElementById('auth-username');
+    const title = document.getElementById('modalTitle');
+
+    if (mode === 'reg') {
+        if (username) username.style.display = 'block';
+        if (title) title.innerText = 'Регистрация';
+    } else {
+        if (username) username.style.display = 'none';
+        if (title) title.innerText = 'Вход';
     }
-    el.style.display = 'block';
+
+    modal.style.display = 'block';
 }
 
 function closeModal(id = 'authModal') {
