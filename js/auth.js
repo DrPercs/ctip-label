@@ -186,6 +186,6 @@ function goToAdmin() {
 // --------------------------
 // GLOBAL EXPORTS
 // --------------------------
+window.checkUser = checkUser;
 window.handleAuth = handleAuth;
 window.logout = logout;
-window.checkUser = checkUser;
