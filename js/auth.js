@@ -12,75 +12,37 @@ async function checkUser() {
     const authContainer = document.getElementById('auth-buttons');
     if (!authContainer) return;
 
-    try {
-        // стабильнее чем getUser()
-        const { data: sessionData, error: sessionError } =
-            await _supabase.auth.getSession();
+    const { data: { session } } = await _supabase.auth.getSession();
+    const user = session?.user;
 
-        if (sessionError) {
-            console.log('Session error:', sessionError);
-        }
-
-        const user = sessionData?.session?.user;
-
-        // --------------------------
-        // NOT LOGGED IN
-        // --------------------------
-        if (!user) {
-            window.currentUser = null;
-
-            authContainer.innerHTML = `
-                <button class="btn btn-outline" onclick="openModal('login')">Вход</button>
-                <button class="btn btn-fill" onclick="openModal('reg')">Join</button>
-            `;
-            return;
-        }
-
-        // --------------------------
-        // LOAD PROFILE
-        // --------------------------
-        const { data: profile, error: profileError } = await _supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle();
-
-// Ссылка на временную аватарку, если у юзера её нет или она битая
-const defaultAvatar = 'https://i.imgur.com/6VBx3io.png';
-const avatarUrl = profile?.avatar_url || defaultAvatar;
-const username = profile?.username || user.email.split('@')[0]; // Если нет профиля, берем часть почты
-
-authContainer.innerHTML = `
-    <div style="display:flex; align-items:center; gap:10px;">
-        <div style="text-align:right;">
-            <div style="font-size:0.7rem; font-weight:900;">${username.toUpperCase()}</div>
-            <div style="font-size:0.5rem; color:var(--accent); cursor:pointer;" onclick="logout()">[ ВЫХОД ]</div>
-        </div>
-        <img src="${avatarUrl}" 
-             onerror="this.src='${defaultAvatar}'" 
-             style="width:35px; height:35px; border-radius:50%; border:1px solid var(--accent); object-fit:cover;">
-    </div>
-`;
-
-        // --------------------------
-        // GLOBAL USER STATE
-        // --------------------------
-        window.currentUser = {
-            id: user.id,
-            email: user.email,
-            username: profile?.username || 'user',
-            role: profile?.role || 'guest',
-            avatar: profile?.avatar || null
-        };
-
-        // --------------------------
-        // RENDER UI
-        // --------------------------
-        renderUserMenu();
-
-    } catch (err) {
-        console.log('checkUser fatal error:', err);
+    if (!user) {
+        authContainer.innerHTML = `
+            <button class="btn btn-outline" onclick="openModal('login')">Вход</button>
+            <button class="btn btn-fill" onclick="openModal('reg')">Join</button>
+        `;
+        return;
     }
+
+    const { data: profile } = await _supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+
+    // РАБОЧАЯ ССЫЛКА (Imgur или любая прямая)
+    const fallbackAvatar = 'https://i.imgur.com/6VBx3io.png';
+    const avatarUrl = (profile && profile.avatar_url && !profile.avatar_url.includes('default-avatar.png')) 
+                       ? profile.avatar_url 
+                       : fallbackAvatar;
+
+    authContainer.innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="showPage('profile')">
+            <span style="font-size:0.7rem; font-weight:900;">${(profile?.username || 'NEW_USER').toUpperCase()}</span>
+            <img src="${avatarUrl}" onerror="this.src='${fallbackAvatar}'" style="width:35px; height:35px; border-radius:50%; border:1px solid var(--accent); object-fit:cover;">
+        </div>
+    `;
+
+    // Если мы на странице профиля, обновим там превью
+    const preview = document.getElementById('profile-preview-img');
+    if (preview) preview.src = avatarUrl;
+    const nameInput = document.getElementById('new-username');
+    if (nameInput && profile) nameInput.value = profile.username || '';
 }
 
 // --------------------------
