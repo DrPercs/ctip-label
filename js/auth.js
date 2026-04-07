@@ -39,6 +39,11 @@ window.currentUserId = user.id;
         avatarUrl = fallback;
     }
 
+    const createRefBtn = document.getElementById('create-ref-btn');
+if (createRefBtn) {
+    createRefBtn.style.display = (profile?.role === 'artist' || profile?.role === 'admin') ? 'inline-block' : 'none';
+}
+
     authContainer.innerHTML = `
         <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="showPage('profile')">
             <div style="text-align:right">
