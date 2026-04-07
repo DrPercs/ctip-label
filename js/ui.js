@@ -109,6 +109,13 @@ function openModal(mode) {
         // document.getElementById('refModal').style.display = 'block';
         return;
     }
+    if (mode === 'upload-sub') {
+        const subModal = document.getElementById('upload-sub');
+        if (subModal) {
+            subModal.style.display = 'block';
+            return;
+        }
+    }
     if (mode === 'reg') {
         if (username) username.style.display = 'block';
         if (title) title.innerText = 'Регистрация';
