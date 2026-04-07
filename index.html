@@ -26,8 +26,9 @@
     </nav>
 
     <div class="nav-right" id="auth-buttons">
-       <button class="btn btn-outline" onclick="openModal('authModal')">Вход</button>
-<button class="btn btn-fill" onclick="openModal('authModal')">Join</button>
+        <!-- 🔥 ФИКС: передаём режим -->
+        <button class="btn btn-outline" onclick="openModal('login')">Вход</button>
+        <button class="btn btn-fill" onclick="openModal('reg')">Join</button>
     </div>
 </header>
 
@@ -105,28 +106,27 @@
 <!-- AUTH MODAL -->
 <div id="authModal" class="modal" style="display:none;">
     <div class="modal-content">
-        <h2 id="modalTitle">АВТОРИЗАЦИЯ</h2>
+        <h2 id="modalTitle">ВХОД</h2>
 
-        <input type="text" id="auth-username" placeholder="Ник (только для регистрации)" style="display:none;">
+        <input type="text" id="auth-username" placeholder="Ник" style="display:none;">
         <input type="email" id="auth-email" placeholder="Email">
         <input type="password" id="auth-password" placeholder="Password">
 
-        <div style="display:flex; gap:10px; margin-top:10px;">
-            <button class="btn btn-fill" onclick="handleAuth('login')">Войти</button>
-            <button class="btn btn-outline" onclick="handleAuth('reg')">Регистрация</button>
-        </div>
+        <!-- 🔥 ФИКС: одна кнопка + режим -->
+        <button class="btn btn-fill" onclick="handleAuth(currentMode)">Продолжить</button>
 
-        <button class="btn btn-outline" onclick="closeModal()" style="margin-top:10px;">Закрыть</button>
+        <button class="btn btn-outline" onclick="closeModal()">Закрыть</button>
     </div>
 </div>
 
 <!-- JS -->
 <script src="js/supabase.js"></script>
 <script src="js/ui.js"></script>
-<script src="js/requests.js"></script> <!-- ВАЖНО -->
+<script src="js/requests.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/posts.js"></script>
 <script src="js/likes.js"></script>
 <script src="js/app.js"></script>
+
 </body>
 </html>
