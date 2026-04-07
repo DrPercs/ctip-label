@@ -37,7 +37,44 @@ async function fetchRequests() {
     }).join('');
 }
 
-// 2. ОТКРЫТИЕ ДЕТАЛЕЙ (Показать биты на конкретный реф)
+// 2. СОЗДАНИЕ РЕФА
+
+async function createRequest() {
+    // Собираем данные из полей, которые у тебя в index.html
+    const title = document.getElementById('req-title').value;
+    const bpm = document.getElementById('req-bpm').value;
+    const style = document.getElementById('req-style').value;
+    const desc = document.getElementById('req-desc').value;
+
+    if (!title) return alert("Введите название рефа!");
+
+    try {
+        const { error } = await _supabase.from('requests').insert([{
+            user_id: window.currentUserId, // Берем из глобальной переменной auth.js
+            title: title,
+            bpm: parseInt(bpm) || 0,
+            style: style,
+            description: desc
+        }]);
+
+        if (error) throw error;
+
+        alert("Реф успешно создан!");
+        
+        // Очищаем поля
+        document.getElementById('req-title').value = '';
+        document.getElementById('req-bpm').value = '';
+        document.getElementById('req-style').value = '';
+        document.getElementById('req-desc').value = '';
+
+        fetchRequests(); // Обновляем список
+    } catch (e) {
+        console.error(e);
+        alert("Ошибка: " + e.message);
+    }
+}
+
+// 3. ОТКРЫТИЕ ДЕТАЛЕЙ (Показать биты на конкретный реф)
 async function openRequestDetails(reqId) {
     currentRequestId = reqId;
     showPage('request-detail'); // Создадим эту страницу в HTML
@@ -60,7 +97,7 @@ async function openRequestDetails(reqId) {
     `).join('') || '<p>Пока никто не откликнулся</p>';
 }
 
-// 3. ЗАГРУЗКА БИТА (От Битмейкера)
+// 4. ЗАГРУЗКА БИТА (От Битмейкера)
 async function submitBeat() {
     const file = document.getElementById('sub-file').files[0];
     if (!file || !currentRequestId) return alert("Выбери файл!");
