@@ -8,6 +8,7 @@ function showPage(pageId) {
     // безопасные вызовы (чтобы не падало)
     if (pageId === 'feed' && window.fetchPosts) fetchPosts();
     if (pageId === 'requests' && window.fetchRequests) fetchRequests();
+    if (pageId === 'event') loadHallOfFame();
 }
 
 function openModal(mode) {
