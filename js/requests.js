@@ -1,3 +1,6 @@
+if (!window.currentUserId) window.currentUserId = null;
+if (!window.userRole) window.userRole = 'guest';
+
 let currentRequestId = null;
 
 // 1. ЗАГРУЗКА ВСЕХ РЕФОВ
