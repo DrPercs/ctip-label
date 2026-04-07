@@ -17,10 +17,15 @@ async function fetchRequests() {
 
     container.innerHTML = requests.map(req => {
         const isMyRef = req.user_id === window.currentUserId;
-        const canDrop = (window.userRole === 'beatmaker' || window.userRole === 'admin');
+        const isAdmin = window.userRole === 'admin';
+        const isBeatmaker = window.userRole === 'beatmaker';
         
-        // Артист не видит кнопку на своем рефе, чтобы не спамить самому себе
-        const showDropBtn = canDrop && !isMyRef;
+        // Логика кнопок:
+        // 1. "Слушать отклики" - видят админы и создатель рефа (Артист)
+        const showListenBtn = isAdmin || isMyRef;
+        
+        // 2. "Drop Beat" - видят админы и битмейкеры (но не на своих рефах, если админ сам создал)
+        const showDropBtn = (isAdmin || isBeatmaker) && !isMyRef;
 
         return `
             <div class="track-card" style="border-left: 3px solid var(--accent);">
@@ -32,7 +37,7 @@ async function fetchRequests() {
                 <p style="font-size:0.8rem; color:var(--gray);">${req.description || ''}</p>
                 
                 <div style="margin-top:15px; display:flex; gap:10px;">
-                    <button class="btn btn-outline" style="font-size:0.6rem;" onclick="openRequestDetails('${req.id}')">СЛУШАТЬ ОТКЛИКИ</button>
+                    ${showListenBtn ? `<button class="btn btn-outline" style="font-size:0.6rem;" onclick="openRequestDetails('${req.id}')">СЛУШАТЬ ОТКЛИКИ</button>` : ''}
                     ${showDropBtn ? `<button class="btn btn-fill" style="font-size:0.6rem;" onclick="prepareUpload('${req.id}')">DROP BEAT</button>` : ''}
                 </div>
             </div>
