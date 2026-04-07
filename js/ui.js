@@ -1,4 +1,4 @@
-let currentMode = 'login';
+window.currentMode = 'login';
 function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
 
@@ -14,7 +14,7 @@ function openModal(mode) {
     const modal = document.getElementById('authModal');
     if (!modal) return;
 
-    currentMode = mode;
+    window.currentMode = mode;
 
     const username = document.getElementById('auth-username');
     const title = document.getElementById('modalTitle');
