@@ -86,10 +86,8 @@ async function loadHallOfFame() {
     }
 }
 
-// Экспортируем, чтобы функция была видна глобально
-window.loadHallOfFame = loadHallOfFame;
-
 // экспорт
 window.showPage = showPage;
+window.loadHallOfFame = loadHallOfFame;
 window.openModal = openModal;
 window.closeModal = closeModal;
