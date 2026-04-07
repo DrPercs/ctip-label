@@ -25,24 +25,30 @@ async function checkUser() {
 
     const { data: profile } = await _supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
 
-    // РАБОЧАЯ ССЫЛКА (Imgur или любая прямая)
-    const fallbackAvatar = 'https://i.imgur.com/6VBx3io.png';
-    const avatarUrl = (profile && profile.avatar_url && !profile.avatar_url.includes('default-avatar.png')) 
-                       ? profile.avatar_url 
-                       : fallbackAvatar;
+    // ПРЯМАЯ ССЫЛКА НА ЗАГЛУШКУ (чтобы точно не было 404)
+    const fallback = 'https://i.imgur.com/6VBx3io.png';
+    
+    // Проверяем: если в базе пусто или там старый битый путь
+    let avatarUrl = profile?.avatar_url;
+    if (!avatarUrl || avatarUrl.includes('default-avatar.png')) {
+        avatarUrl = fallback;
+    }
 
     authContainer.innerHTML = `
         <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="showPage('profile')">
-            <span style="font-size:0.7rem; font-weight:900;">${(profile?.username || 'NEW_USER').toUpperCase()}</span>
-            <img src="${avatarUrl}" onerror="this.src='${fallbackAvatar}'" style="width:35px; height:35px; border-radius:50%; border:1px solid var(--accent); object-fit:cover;">
+            <div style="text-align:right">
+                <div style="font-size:0.7rem; font-weight:900;">${(profile?.username || 'USER').toUpperCase()}</div>
+                <div style="font-size:0.5rem; color:var(--accent); opacity:0.7;">PROFILE ></div>
+            </div>
+            <img src="${avatarUrl}" 
+                 onerror="this.src='${fallback}'" 
+                 style="width:35px; height:35px; border-radius:50%; border:1px solid var(--accent); object-fit:cover; background:#222;">
         </div>
     `;
 
-    // Если мы на странице профиля, обновим там превью
+    // Обновляем превью на странице профиля, если она открыта
     const preview = document.getElementById('profile-preview-img');
     if (preview) preview.src = avatarUrl;
-    const nameInput = document.getElementById('new-username');
-    if (nameInput && profile) nameInput.value = profile.username || '';
 }
 
 // --------------------------
