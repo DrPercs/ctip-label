@@ -146,53 +146,45 @@ async function handleAuth(mode) {
 async function updateProfile() {
     const { data: { session } } = await _supabase.auth.getSession();
     const user = session?.user;
-    if (!user) return alert("Войди в аккаунт!");
+    if (!user) return alert("Войди!");
 
     const newUsername = document.getElementById('new-username').value;
+    const newPassword = document.getElementById('new-password').value;
     const avatarFile = document.getElementById('new-avatar').files[0];
-    let avatarUrl = null;
-
+    
     const btn = document.querySelector('#profile-edit-ui .btn');
-    btn.innerText = "СОХРАНЕНИЕ...";
+    btn.innerText = "ОБРАБОТКА...";
     btn.disabled = true;
 
     try {
-        // 1. Если выбрали файл - грузим в Storage
-        if (avatarFile) {
-            const fileName = `avatar_${user.id}_${Date.now()}`;
-            const { error: uploadError } = await _supabase.storage
-                .from('avatars')
-                .upload(fileName, avatarFile);
-            
-            if (uploadError) throw uploadError;
-
-            const { data: urlData } = _supabase.storage
-                .from('avatars')
-                .getPublicUrl(fileName);
-            avatarUrl = urlData.publicUrl;
+        // 1. Смена пароля (если введён)
+        if (newPassword) {
+            const { error: passError } = await _supabase.auth.updateUser({ password: newPassword });
+            if (passError) throw passError;
         }
 
-        // 2. Обновляем таблицу profiles
-        const updates = {
-            id: user.id,
-            username: newUsername,
-            updated_at: new Date()
-        };
+        // 2. Загрузка аватара (как раньше)
+        let avatarUrl = null;
+        if (avatarFile) {
+            const fileName = `avatar_${user.id}_${Date.now()}`;
+            await _supabase.storage.from('avatars').upload(fileName, avatarFile);
+            avatarUrl = _supabase.storage.from('avatars').getPublicUrl(fileName).data.publicUrl;
+        }
+
+        // 3. Апдейт профиля
+        const updates = { id: user.id, username: newUsername, updated_at: new Date() };
         if (avatarUrl) updates.avatar_url = avatarUrl;
 
-        const { error: updateError } = await _supabase
-            .from('profiles')
-            .upsert(updates);
+        const { error } = await _supabase.from('profiles').upsert(updates);
+        if (error) throw error;
 
-        if (updateError) throw updateError;
-
-        alert("Профиль обновлен!");
-        await checkUser(); // Перерисовать шапку
+        alert("Данные обновлены!");
+        if (newPassword) alert("Пароль тоже успешно изменен.");
+        await checkUser();
     } catch (err) {
-        console.error(err);
-        alert("Ошибка: " + err.message);
+        alert(err.message);
     } finally {
-        btn.innerText = "СОХРАНИТЬ";
+        btn.innerText = "СОХРАНИТЬ ВСЁ";
         btn.disabled = false;
     }
 }
