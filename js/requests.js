@@ -1,155 +1,107 @@
 let currentRequestId = null;
 
-// -------------------
-// FETCH REQUESTS
-// -------------------
+// 1. ЗАГРУЗКА ВСЕХ РЕФОВ
 async function fetchRequests() {
     const container = document.getElementById('requests-container');
     if (!container) return;
 
-    const { data, error } = await _supabase
+    const { data: requests, error } = await _supabase
         .from('requests')
-        .select('*')
+        .select('*, profiles(username)')
         .order('created_at', { ascending: false });
 
-    if (error) {
-        console.log('fetchRequests error:', error);
-        return;
-    }
+    if (error) return console.error(error);
 
-    const safe = data || [];
+    container.innerHTML = requests.map(req => {
+        const isMyRef = req.user_id === window.currentUserId;
+        const canDrop = (window.userRole === 'beatmaker' || window.userRole === 'admin');
+        
+        // Артист не видит кнопку на своем рефе, чтобы не спамить самому себе
+        const showDropBtn = canDrop && !isMyRef;
 
-    container.innerHTML = safe.map(req => `
-        <div class="track-card" onclick="openRequest('${req.id}')">
-            <strong>${req.title}</strong>
-            <p>${req.style || ''} ${req.bpm ? '| ' + req.bpm + ' BPM' : ''}</p>
-            <p>${req.description || ''}</p>
-        </div>
-    `).join('');
+        return `
+            <div class="track-card" style="border-left: 3px solid var(--accent);">
+                <div style="display:flex; justify-content:space-between;">
+                    <small style="color:var(--accent)">REQ BY: ${req.profiles?.username || 'ANON'}</small>
+                    <small>${req.bpm || '?'} BPM | ${req.style || 'ANY'}</small>
+                </div>
+                <h3 style="margin:10px 0;">${req.title}</h3>
+                <p style="font-size:0.8rem; color:var(--gray);">${req.description || ''}</p>
+                
+                <div style="margin-top:15px; display:flex; gap:10px;">
+                    <button class="btn btn-outline" style="font-size:0.6rem;" onclick="openRequestDetails('${req.id}')">СЛУШАТЬ ОТКЛИКИ</button>
+                    ${showDropBtn ? `<button class="btn btn-fill" style="font-size:0.6rem;" onclick="prepareUpload('${req.id}')">DROP BEAT</button>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
-// -------------------
-// CREATE REQUEST
-// -------------------
-async function createRequest() {
-    const { data: { user } } = await _supabase.auth.getSession();
-    const u = user?.user;
+// 2. ОТКРЫТИЕ ДЕТАЛЕЙ (Показать биты на конкретный реф)
+async function openRequestDetails(reqId) {
+    currentRequestId = reqId;
+    showPage('request-detail'); // Создадим эту страницу в HTML
+    
+    const container = document.getElementById('submissions-list');
+    container.innerHTML = '<p>LOADING BEATS...</p>';
 
-    if (!u) {
-        alert("Войди!");
-        return;
-    }
-
-    const { error } = await _supabase.from('requests').insert([{
-        user_id: u.id,
-        title: document.getElementById('req-title').value,
-        bpm: document.getElementById('req-bpm').value,
-        style: document.getElementById('req-style').value,
-        description: document.getElementById('req-desc').value
-    }]);
-
-    if (error) {
-        console.log('createRequest error:', error);
-        return;
-    }
-
-    fetchRequests();
-}
-
-// -------------------
-// OPEN REQUEST
-// -------------------
-async function openRequest(id) {
-    currentRequestId = id;
-    showPage('request-view');
-
-    const { data, error } = await _supabase
-        .from('requests')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-    if (error) {
-        console.log('openRequest error:', error);
-        return;
-    }
-
-    document.getElementById('request-title').innerText = data.title;
-    document.getElementById('request-meta').innerText =
-        `${data.style || ''} ${data.bpm ? '| ' + data.bpm + ' BPM' : ''}`;
-    document.getElementById('request-desc').innerText = data.description || '';
-
-    fetchSubmissions(id);
-}
-
-// -------------------
-// FETCH SUBMISSIONS
-// -------------------
-async function fetchSubmissions(requestId) {
-    const container = document.getElementById('submissions-container');
-    if (!container) return;
-
-    const { data, error } = await _supabase
+    const { data: subs, error } = await _supabase
         .from('request_submissions')
-        .select('*')
-        .eq('request_id', requestId)
-        .order('created_at', { ascending: false });
+        .select('*, profiles(username)')
+        .eq('request_id', reqId);
 
-    if (error) {
-        console.log('fetchSubmissions error:', error);
-        return;
-    }
+    if (error) return;
 
-    const safe = data || [];
-
-    container.innerHTML = safe.map(sub => `
+    container.innerHTML = subs.map(sub => `
         <div class="track-card">
-            <audio controls src="${sub.track_url}"></audio>
+            <small>BEAT BY: ${sub.profiles?.username || 'ANON'}</small>
+            <audio src="${sub.track_url}" controls style="width:100%; filter:invert(1); margin-top:10px;"></audio>
         </div>
-    `).join('');
+    `).join('') || '<p>Пока никто не откликнулся</p>';
 }
 
-// -------------------
-// SUBMIT TRACK
-// -------------------
-async function submitToCurrentRequest() {
-    const file = document.getElementById('submission-file').files[0];
-    if (!file) return alert("Выбери файл");
+// 3. ЗАГРУЗКА БИТА (От Битмейкера)
+async function submitBeat() {
+    const file = document.getElementById('sub-file').files[0];
+    if (!file || !currentRequestId) return alert("Выбери файл!");
 
-    const { data: { session } } = await _supabase.auth.getSession();
-    const user = session?.user;
+    const btn = document.getElementById('sub-btn');
+    btn.innerText = "UPLOADING...";
+    btn.disabled = true;
 
-    if (!user) return alert("Войди!");
+    try {
+        const fileName = `sub_${Date.now()}_${file.name}`;
+        const { error: upErr } = await _supabase.storage.from('tracks').upload(fileName, file);
+        if (upErr) throw upErr;
 
-    const fileName = `sub_${Date.now()}_${file.name}`;
+        const { data: urlData } = _supabase.storage.from('tracks').getPublicUrl(fileName);
 
-    const { error: uploadError } = await _supabase
-        .storage
-        .from('tracks')
-        .upload(fileName, file);
+        // 1. В отклики
+        await _supabase.from('request_submissions').insert([{
+            request_id: currentRequestId,
+            user_id: window.currentUserId,
+            track_url: urlData.publicUrl
+        }]);
 
-    if (uploadError) {
-        console.log(uploadError);
-        return;
+        // 2. В общую ленту POSTS (как ты и хотел)
+        await _supabase.from('posts').insert([{
+            user_id: window.currentUserId,
+            title: "Response to Ref #" + currentRequestId.substring(0,5),
+            track_url: urlData.publicUrl,
+            genre: 'REF_RESPONSE'
+        }]);
+
+        alert("Бит успешно отправлен!");
+        openRequestDetails(currentRequestId);
+    } catch (e) {
+        alert(e.message);
+    } finally {
+        btn.innerText = "ОТПРАВИТЬ";
+        btn.disabled = false;
     }
-
-    const { data } = _supabase.storage
-        .from('tracks')
-        .getPublicUrl(fileName);
-
-    await _supabase.from('request_submissions').insert([{
-        request_id: currentRequestId,
-        user_id: user.id,
-        track_url: data.publicUrl
-    }]);
-
-    fetchSubmissions(currentRequestId);
 }
 
-// -------------------
-// EXPORTS
-// -------------------
-window.createRequest = createRequest;
 window.fetchRequests = fetchRequests;
-window.openRequest = openRequest;
-window.submitToCurrentRequest = submitToCurrentRequest;
+window.openRequestDetails = openRequestDetails;
+window.submitBeat = submitBeat;
+window.prepareUpload = (id) => { currentRequestId = id; openModal('upload-sub'); };
