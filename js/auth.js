@@ -40,14 +40,27 @@ async function checkUser() {
         // LOAD PROFILE
         // --------------------------
         const { data: profile, error: profileError } = await _supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .maybeSingle();
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle();
 
-        if (profileError) {
-            console.log('Profile error:', profileError);
-        }
+// Ссылка на временную аватарку, если у юзера её нет или она битая
+const defaultAvatar = 'https://i.imgur.com/6VBx3io.png';
+const avatarUrl = profile?.avatar_url || defaultAvatar;
+const username = profile?.username || user.email.split('@')[0]; // Если нет профиля, берем часть почты
+
+authContainer.innerHTML = `
+    <div style="display:flex; align-items:center; gap:10px;">
+        <div style="text-align:right;">
+            <div style="font-size:0.7rem; font-weight:900;">${username.toUpperCase()}</div>
+            <div style="font-size:0.5rem; color:var(--accent); cursor:pointer;" onclick="logout()">[ ВЫХОД ]</div>
+        </div>
+        <img src="${avatarUrl}" 
+             onerror="this.src='${defaultAvatar}'" 
+             style="width:35px; height:35px; border-radius:50%; border:1px solid var(--accent); object-fit:cover;">
+    </div>
+`;
 
         // --------------------------
         // GLOBAL USER STATE
