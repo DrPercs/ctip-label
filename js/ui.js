@@ -101,6 +101,14 @@ function openModal(mode) {
     window.currentMode = mode;
     const username = document.getElementById('auth-username');
     const title = document.getElementById('modalTitle');
+    if (mode === 'create-ref') {
+        // Тут можно либо открывать другую модалку, 
+        // либо очищать текущую под нужды Артиста.
+        console.log("Открываем форму создания рефа");
+        // Если у тебя есть отдельная модалка:
+        // document.getElementById('refModal').style.display = 'block';
+        return;
+    }
     if (mode === 'reg') {
         if (username) username.style.display = 'block';
         if (title) title.innerText = 'Регистрация';
