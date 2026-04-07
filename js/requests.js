@@ -101,6 +101,7 @@ async function submitBeat() {
     }
 }
 
+window.createRequest = createRequest;
 window.fetchRequests = fetchRequests;
 window.openRequestDetails = openRequestDetails;
 window.submitBeat = submitBeat;
