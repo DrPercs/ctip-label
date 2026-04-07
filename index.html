@@ -95,18 +95,11 @@
 </div>
 
 <!-- ОДИН РЕФ -->
-<div id="request-view" class="page">
-    <h2 id="request-title"></h2>
-    <p id="request-meta"></p>
-    <p id="request-desc"></p>
-
-    <div style="margin:20px 0;">
-        <input type="file" id="submission-file">
-        <button class="btn btn-fill" onclick="submitToCurrentRequest()">Отправить бит</button>
-    </div>
-
-    <h3>SUBMISSIONS</h3>
-    <div id="submissions-container" class="grid"></div>
+<div id="request-detail" class="page"> <button class="btn btn-outline" onclick="showPage('requests')">< НАЗАД</button>
+    <h2 id="request-title-detail" style="margin-top:20px;"></h2>
+    
+    <div id="submissions-list" class="grid" style="margin-top:30px;">
+        </div>
 </div>
 
 <!-- EVENT -->
