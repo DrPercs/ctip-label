@@ -122,34 +122,43 @@ async function handleAuth(mode) {
     const password = document.getElementById('auth-password')?.value;
     const username = document.getElementById('auth-username')?.value;
 
-    if (!email || !password) return alert("Заполни данные!");
+    if (!email || !password) return alert("Заполни все поля!");
 
     try {
+        console.log("Attempting auth. Mode:", mode); // Чекнем в консоли, какой режим долетает
+
         if (mode === 'reg') {
+            if (!username) return alert("Введи ник для регистрации!");
+            
             const { data, error } = await _supabase.auth.signUp({
                 email,
                 password,
-                options: { data: { username } }
+                options: { data: { username: username } }
             });
             if (error) throw error;
-            
-            // Если почта подтверждена или не требует подтверждения
-            if (data.user && data.session) {
-                alert('Добро пожаловать!');
-            } else {
-                alert('Проверь почту (если включено подтверждение)');
-            }
-        } else {
-            const { error } = await _supabase.auth.signInWithPassword({ email, password });
+            alert('Регистрация успешна! Если подтверждение отключено — просто войди.');
+        } 
+        
+        else if (mode === 'login') {
+            const { data, error } = await _supabase.auth.signInWithPassword({
+                email,
+                password
+            });
             if (error) throw error;
+            console.log("Login success:", data);
         }
 
         closeModal();
-        await checkUser(); // Сразу обновляем UI
+        await checkUser(); // Обновляем шапку сайта
 
     } catch (err) {
         console.error('Auth error:', err);
-        alert(err.message);
+        // Если юзер уже есть, а мы пытались регаться — пробуем сразу залогинить
+        if (err.message.includes("already registered")) {
+            alert("Этот Email уже зареган. Попробуй 'Вход'");
+        } else {
+            alert(err.message);
+        }
     }
 }
 
