@@ -122,36 +122,34 @@ async function handleAuth(mode) {
     const password = document.getElementById('auth-password')?.value;
     const username = document.getElementById('auth-username')?.value;
 
+    if (!email || !password) return alert("Заполни данные!");
+
     try {
         if (mode === 'reg') {
-            const { error } = await _supabase.auth.signUp({
+            const { data, error } = await _supabase.auth.signUp({
                 email,
                 password,
-                options: {
-                    data: { username }
-                }
+                options: { data: { username } }
             });
-
             if (error) throw error;
-
-            alert('Проверь почту для подтверждения');
-        }
-
-        if (mode === 'login') {
-            const { error } = await _supabase.auth.signInWithPassword({
-                email,
-                password
-            });
-
+            
+            // Если почта подтверждена или не требует подтверждения
+            if (data.user && data.session) {
+                alert('Добро пожаловать!');
+            } else {
+                alert('Проверь почту (если включено подтверждение)');
+            }
+        } else {
+            const { error } = await _supabase.auth.signInWithPassword({ email, password });
             if (error) throw error;
         }
 
-        closeModal(mode);
-        await checkUser();
+        closeModal();
+        await checkUser(); // Сразу обновляем UI
 
     } catch (err) {
-        console.log('Auth error:', err);
-        alert(err.message || 'Auth error');
+        console.error('Auth error:', err);
+        alert(err.message);
     }
 }
 
